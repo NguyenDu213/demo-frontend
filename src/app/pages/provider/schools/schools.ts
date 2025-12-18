@@ -99,9 +99,7 @@ export class ProviderSchoolsComponent implements OnInit {
     }
     const term = this.searchTerm.toLowerCase();
     return this.schools.filter(school =>
-      school.name.toLowerCase().includes(term) ||
-      school.code.toLowerCase().includes(term) ||
-      school.email.toLowerCase().includes(term)
+      school.name.toLowerCase().includes(term)
     );
   }
 }

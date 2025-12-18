@@ -116,8 +116,7 @@ export class SchoolRolesComponent implements OnInit {
     }
     const term = this.searchTerm.toLowerCase();
     return this.roles.filter(role =>
-      role.roleName.toLowerCase().includes(term) ||
-      role.description.toLowerCase().includes(term)
+      role.roleName.toLowerCase().includes(term)
     );
   }
 }

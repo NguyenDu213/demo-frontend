@@ -147,9 +147,7 @@ export class SchoolUsersComponent implements OnInit {
     
     const term = this.searchTerm.toLowerCase();
     return filtered.filter(user =>
-      user.fullName.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term) ||
-      user.phoneNumber.toLowerCase().includes(term)
+      user.fullName.toLowerCase().includes(term)
     );
   }
 

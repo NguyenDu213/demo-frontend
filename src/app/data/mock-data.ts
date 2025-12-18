@@ -282,7 +282,7 @@ export const MOCK_LOGIN_CREDENTIALS = {
     school: [
         { email: 'an.nguyen@school1.edu.vn', password: 'admin123', scope: 'School', schoolId: 1 },
         { email: 'binh.tran@school2.edu.vn', password: 'admin123', scope: 'School', schoolId: 2 },
-        { email: 'lan.tran@school1.edu.vn', password: 'teacher123', scope: 'School', schoolId: 1 },
+        { email: 'lan.tran@school1.edu.vn', password: ' ', scope: 'School', schoolId: 1 },
         { email: 'duc.pham@school2.edu.vn', password: 'teacher123', scope: 'School', schoolId: 2 },
         { email: 'hung.le@school1.edu.vn', password: 'student123', scope: 'School', schoolId: 1 },
         { email: 'mai.hoang@school2.edu.vn', password: 'student123', scope: 'School', schoolId: 2 }

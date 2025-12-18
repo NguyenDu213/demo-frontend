@@ -101,8 +101,7 @@ export class ProviderRolesComponent implements OnInit {
     }
     const term = this.searchTerm.toLowerCase();
     return filtered.filter(role =>
-      role.roleName.toLowerCase().includes(term) ||
-      role.description.toLowerCase().includes(term)
+      role.roleName.toLowerCase().includes(term)
     );
   }
 }
