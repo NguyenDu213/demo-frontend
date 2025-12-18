@@ -44,7 +44,7 @@ export const MOCK_ROLES: Role[] = [
     // Provider Roles
     {
         id: 1,
-        roleName: 'System Admin',
+        roleName: 'SYSTEM_ADMIN',
         typeRole: TypeRole.PROVIDER,
         description: 'Quản trị viên hệ thống, có toàn quyền quản lý',
         schoolId: null,
@@ -55,7 +55,7 @@ export const MOCK_ROLES: Role[] = [
     },
     {
         id: 2,
-        roleName: 'System Staff',
+        roleName: 'SYSTEM_STAFF',
         typeRole: TypeRole.PROVIDER,
         description: 'Nhân viên hệ thống, quản lý các trường học',
         schoolId: null,
@@ -67,7 +67,7 @@ export const MOCK_ROLES: Role[] = [
     // School Roles
     {
         id: 3,
-        roleName: 'School Admin',
+        roleName: 'SCHOOL_ADMIN',
         typeRole: TypeRole.SCHOOL,
         description: 'Quản trị viên trường học',
         schoolId: null,
@@ -78,7 +78,7 @@ export const MOCK_ROLES: Role[] = [
     },
     {
         id: 4,
-        roleName: 'Teacher',
+        roleName: 'TEACHER',
         typeRole: TypeRole.SCHOOL,
         description: 'Giáo viên',
         schoolId: 1,
@@ -89,7 +89,7 @@ export const MOCK_ROLES: Role[] = [
     },
     {
         id: 5,
-        roleName: 'Student',
+        roleName: 'STUDENT',
         typeRole: TypeRole.SCHOOL,
         description: 'Học sinh',
         schoolId: 1,
@@ -100,7 +100,7 @@ export const MOCK_ROLES: Role[] = [
     },
     {
         id: 6,
-        roleName: 'Teacher',
+        roleName: 'TEACHER',
         typeRole: TypeRole.SCHOOL,
         description: 'Giáo viên',
         schoolId: 2,
@@ -111,7 +111,7 @@ export const MOCK_ROLES: Role[] = [
     },
     {
         id: 7,
-        roleName: 'Student',
+        roleName: 'STUDENT',
         typeRole: TypeRole.SCHOOL,
         description: 'Học sinh',
         schoolId: 2,
@@ -282,7 +282,7 @@ export const MOCK_LOGIN_CREDENTIALS = {
     school: [
         { email: 'an.nguyen@school1.edu.vn', password: 'admin123', scope: 'School', schoolId: 1 },
         { email: 'binh.tran@school2.edu.vn', password: 'admin123', scope: 'School', schoolId: 2 },
-        { email: 'lan.tran@school1.edu.vn', password: ' ', scope: 'School', schoolId: 1 },
+        { email: 'lan.tran@school1.edu.vn', password: 'teacher123', scope: 'School', schoolId: 1 },
         { email: 'duc.pham@school2.edu.vn', password: 'teacher123', scope: 'School', schoolId: 2 },
         { email: 'hung.le@school1.edu.vn', password: 'student123', scope: 'School', schoolId: 1 },
         { email: 'mai.hoang@school2.edu.vn', password: 'student123', scope: 'School', schoolId: 2 }

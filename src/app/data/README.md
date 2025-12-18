@@ -9,16 +9,16 @@ Các service đã được cấu hình để sử dụng mock data khi `USE_MOCK
 ## Tài khoản đăng nhập mẫu
 
 ### Provider (Hệ thống):
-- **Email:** `admin@system.com` | **Password:** `admin123` (System Admin)
-- **Email:** `staff@system.com` | **Password:** `staff123` (System Staff)
+- **Email:** `admin@system.com` | **Password:** `admin123` (SYSTEM_ADMIN)
+- **Email:** `staff@system.com` | **Password:** `staff123` (SYSTEM_STAFF)
 
 ### School (Trường học):
-- **Email:** `an.nguyen@school1.edu.vn` | **Password:** `admin123` (School Admin - Trường 1)
-- **Email:** `binh.tran@school2.edu.vn` | **Password:** `admin123` (School Admin - Trường 2)
-- **Email:** `lan.tran@school1.edu.vn` | **Password:** `teacher123` (Teacher - Trường 1)
-- **Email:** `duc.pham@school2.edu.vn` | **Password:** `teacher123` (Teacher - Trường 2)
-- **Email:** `hung.le@school1.edu.vn` | **Password:** `student123` (Student - Trường 1)
-- **Email:** `mai.hoang@school2.edu.vn` | **Password:** `student123` (Student - Trường 2)
+- **Email:** `an.nguyen@school1.edu.vn` | **Password:** `admin123` (SCHOOL_ADMIN - Trường 1)
+- **Email:** `binh.tran@school2.edu.vn` | **Password:** `admin123` (SCHOOL_ADMIN - Trường 2)
+- **Email:** `lan.tran@school1.edu.vn` | **Password:** `teacher123` (TEACHER - Trường 1)
+- **Email:** `duc.pham@school2.edu.vn` | **Password:** `teacher123` (TEACHER - Trường 2)
+- **Email:** `hung.le@school1.edu.vn` | **Password:** `student123` (STUDENT - Trường 1)
+- **Email:** `mai.hoang@school2.edu.vn` | **Password:** `student123` (STUDENT - Trường 2)
 
 ## Dữ liệu mẫu
 
@@ -28,11 +28,13 @@ Các service đã được cấu hình để sử dụng mock data khi `USE_MOCK
 3. Trường THPT Chu Văn An (ID: 3)
 
 ### Roles (7 roles)
-- System Admin (Provider)
-- System Staff (Provider)
-- School Admin (School - null schoolId)
-- Teacher (School - cho từng trường)
-- Student (School - cho từng trường)
+- SYSTEM_ADMIN (Provider)
+- SYSTEM_STAFF (Provider)
+- SCHOOL_ADMIN (School - null schoolId)
+- TEACHER (School - cho từng trường)
+- STUDENT (School - cho từng trường)
+
+**Lưu ý:** Tên role phải tuân theo quy tắc: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_).
 
 ### Users (8 người dùng)
 - 2 Provider users

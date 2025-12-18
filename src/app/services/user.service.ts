@@ -21,9 +21,22 @@ export class UserService {
   }
 
   private initializeMockData(): void {
-    if (!localStorage.getItem(this.mockDataKey)) {
+    // Kiểm tra version để tự động reset khi có thay đổi mock data
+    const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
+    const storedVersion = localStorage.getItem('mock_users_version');
+    
+    if (!localStorage.getItem(this.mockDataKey) || storedVersion !== MOCK_DATA_VERSION) {
       localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
+      localStorage.setItem('mock_users_version', MOCK_DATA_VERSION);
     }
+  }
+
+  /**
+   * Reset mock data về dữ liệu mặc định từ mock-data.ts
+   */
+  resetMockData(): void {
+    localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
+    localStorage.setItem('mock_users_version', '1.1');
   }
 
   private getMockUsers(): User[] {
@@ -81,6 +94,7 @@ export class UserService {
       const newUser: User = {
         ...user,
         id: newId,
+        roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -99,6 +113,7 @@ export class UserService {
         users[index] = {
           ...user,
           id,
+          roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
           updatedAt: new Date().toISOString()
         };
         this.saveMockUsers(users);
@@ -119,6 +134,70 @@ export class UserService {
       return of(void 0).pipe(delay(500));
     }
     return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
+  }
+
+  /**
+   * Kiểm tra xem role có đang được sử dụng bởi user nào không
+   */
+  isRoleInUse(roleId: number): Observable<boolean> {
+    if (USE_MOCK_DATA) {
+      const users = this.getMockUsers();
+      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
+      const isInUse = users.some(u => u.roleId != null && Number(u.roleId) === Number(roleId));
+      return of(isInUse).pipe(delay(100));
+    }
+    return this.http.get<boolean>(`${this.apiUrl}/users/check-role/${roleId}`);
+  }
+
+  /**
+   * Lấy số lượng user đang sử dụng role
+   */
+  getUsersByRoleId(roleId: number): Observable<User[]> {
+    if (USE_MOCK_DATA) {
+      const users = this.getMockUsers();
+      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
+      const usersWithRole = users.filter(u => u.roleId != null && Number(u.roleId) === Number(roleId));
+      return of(usersWithRole).pipe(delay(100));
+    }
+    return this.http.get<User[]>(`${this.apiUrl}/users?roleId=${roleId}`);
+  }
+
+  /**
+   * Gán role mới cho tất cả users đang sử dụng role cũ
+   */
+  reassignRole(oldRoleId: number, newRoleId: number): Observable<{ success: boolean; message?: string; updatedCount?: number }> {
+    if (USE_MOCK_DATA) {
+      const users = this.getMockUsers();
+      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
+      const usersToUpdate = users.filter(u => u.roleId != null && Number(u.roleId) === Number(oldRoleId));
+      
+      if (usersToUpdate.length === 0) {
+        return of({ success: false, message: 'Không tìm thấy user nào đang sử dụng role này.' });
+      }
+
+      // Cập nhật roleId cho tất cả users
+      usersToUpdate.forEach(user => {
+        const index = users.findIndex(u => u.id === user.id);
+        if (index !== -1) {
+          users[index] = {
+            ...users[index],
+            roleId: Number(newRoleId), // Đảm bảo roleId là number
+            updatedAt: new Date().toISOString()
+          };
+        }
+      });
+
+      this.saveMockUsers(users);
+      return of({ 
+        success: true, 
+        updatedCount: usersToUpdate.length,
+        message: `Đã gán role mới cho ${usersToUpdate.length} người dùng.`
+      }).pipe(delay(500));
+    }
+    return this.http.put<{ success: boolean; message?: string; updatedCount?: number }>(
+      `${this.apiUrl}/users/reassign-role`,
+      { oldRoleId, newRoleId }
+    );
   }
 }
 

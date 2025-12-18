@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { UserService } from '../../../services/user.service';
 import { RoleService } from '../../../services/role.service';
 import { AuthService } from '../../../services/auth.service';
@@ -22,11 +22,13 @@ export class SchoolUsersComponent implements OnInit {
   searchTerm: string = '';
   genders = Object.values(Gender);
   currentUser: User | null = null;
+  isSaving: boolean = false;
 
   constructor(
     private userService: UserService,
     private roleService: RoleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -42,16 +44,27 @@ export class SchoolUsersComponent implements OnInit {
     if (schoolId !== undefined) {
       this.userService.getUsers('School', schoolId).subscribe({
         next: (data) => {
-          // Filter bỏ các tài khoản admin trường (roleId = 3 là School Admin)
-          this.users = data.filter(user => user.roleId !== 3);
-          this.isLoading = false;
+          // Load roles để check roleName thay vì roleId
+          this.roleService.getRoles('SCHOOL', schoolId).subscribe({
+            next: (roles) => {
+              // Filter bỏ các tài khoản admin trường (dựa trên roleName)
+              this.users = data.filter(user => {
+                const userRole = roles.find(r => r.id === user.roleId);
+                return userRole?.roleName !== 'SCHOOL_ADMIN';
+              });
+              this.isLoading = false;
+              this.cdr.detectChanges();
+            }
+          });
         },
         error: () => {
           this.isLoading = false;
+          this.cdr.detectChanges();
         }
       });
     } else {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -59,8 +72,9 @@ export class SchoolUsersComponent implements OnInit {
     const schoolId = this.currentUser?.schoolId ?? undefined;
     this.roleService.getRoles('SCHOOL', schoolId).subscribe({
       next: (data) => {
-        // Filter bỏ role "School Admin" - không cho phép chọn khi thêm user
-        this.roles = data.filter(role => role.roleName !== 'School Admin');
+        // Filter bỏ role "SCHOOL_ADMIN" - không cho phép chọn khi thêm user
+        this.roles = data.filter(role => role.roleName !== 'SCHOOL_ADMIN');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -100,10 +114,22 @@ export class SchoolUsersComponent implements OnInit {
     this.isModalOpen = false;
     this.selectedUser = this.getEmptyUser();
     this.originalEmail = '';
+    this.isSaving = false;
   }
 
   saveUser(): void {
+    // Prevent double submission
+    if (this.isSaving) {
+      return;
+    }
+
+    this.isSaving = true;
+    const currentUserId = this.currentUser?.id || 1;
+
     if (this.isEditMode && this.selectedUser.id) {
+      // Update updateBy với current user ID
+      this.selectedUser.updateBy = currentUserId;
+      
       // Khi sửa, không cho phép thay đổi email và password
       // Giữ nguyên email gốc
       this.selectedUser.email = this.originalEmail;
@@ -113,15 +139,27 @@ export class SchoolUsersComponent implements OnInit {
       
       this.userService.updateUser(this.selectedUser.id, userToUpdate).subscribe({
         next: () => {
+          this.isSaving = false;
           this.loadUsers();
           this.closeModal();
+        },
+        error: () => {
+          this.isSaving = false;
         }
       });
     } else {
+      // Set createBy và updateBy khi tạo mới
+      this.selectedUser.createBy = currentUserId;
+      this.selectedUser.updateBy = currentUserId;
+      
       this.userService.createUser(this.selectedUser).subscribe({
         next: () => {
+          this.isSaving = false;
           this.loadUsers();
           this.closeModal();
+        },
+        error: () => {
+          this.isSaving = false;
         }
       });
     }
@@ -138,15 +176,14 @@ export class SchoolUsersComponent implements OnInit {
   }
 
   get filteredUsers(): User[] {
-    // Đảm bảo không hiển thị admin trường (roleId = 3)
-    let filtered = this.users.filter(user => user.roleId !== 3);
-    
+    // Filter đã được thực hiện trong loadUsers() dựa trên roleName
+    // Chỉ cần filter theo search term ở đây
     if (!this.searchTerm) {
-      return filtered;
+      return this.users;
     }
     
     const term = this.searchTerm.toLowerCase();
-    return filtered.filter(user =>
+    return this.users.filter(user =>
       user.fullName.toLowerCase().includes(term)
     );
   }

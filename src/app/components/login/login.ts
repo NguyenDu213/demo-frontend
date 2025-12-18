@@ -38,13 +38,17 @@ export class LoginComponent {
             next: (response) => {
                 this.isLoading = false;
                 const user = response.user;
-                if (user.scope === 'Provider') {
-                    this.router.navigate(['/provider/home']);
-                } else if (user.scope === 'School') {
-                    this.router.navigate(['/school/home']);
-                } else {
-                    this.router.navigate(['/']);
-                }
+                
+                // Đợi một chút để đảm bảo role được cache (đặc biệt với mock data)
+                setTimeout(() => {
+                    if (user.scope === 'Provider') {
+                        this.router.navigate(['/provider/home']);
+                    } else if (user.scope === 'School') {
+                        this.router.navigate(['/school/home']);
+                    } else {
+                        this.router.navigate(['/']);
+                    }
+                }, 100); // Đợi 100ms để đảm bảo role được cache
             },
             error: (error) => {
                 this.isLoading = false;

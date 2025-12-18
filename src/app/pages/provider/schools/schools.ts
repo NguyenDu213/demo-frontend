@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { SchoolService } from '../../../services/school.service';
 import { School } from '../../../models/school.model';
 
@@ -15,8 +15,12 @@ export class ProviderSchoolsComponent implements OnInit {
   isEditMode: boolean = false;
   selectedSchool: School = this.getEmptySchool();
   searchTerm: string = '';
+  isSaving: boolean = false;
 
-  constructor(private schoolService: SchoolService) { }
+  constructor(
+    private schoolService: SchoolService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.loadSchools();
@@ -28,9 +32,11 @@ export class ProviderSchoolsComponent implements OnInit {
       next: (data) => {
         this.schools = data;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -61,23 +67,39 @@ export class ProviderSchoolsComponent implements OnInit {
   closeModal(): void {
     this.isModalOpen = false;
     this.selectedSchool = this.getEmptySchool();
+    this.isSaving = false;
   }
 
   saveSchool(): void {
+    // Prevent double submission
+    if (this.isSaving) {
+      return;
+    }
+
+    this.isSaving = true;
+
     if (this.isEditMode && this.selectedSchool.id) {
       this.schoolService.updateSchool(this.selectedSchool.id, this.selectedSchool).subscribe({
         next: () => {
+          this.isSaving = false;
           this.loadSchools();
           this.closeModal();
+        },
+        error: () => {
+          this.isSaving = false;
         }
       });
     } else {
       // Tạo trường mới - admin trường sẽ được tạo tự động
       this.schoolService.createSchool(this.selectedSchool).subscribe({
         next: () => {
+          this.isSaving = false;
           this.loadSchools();
           this.closeModal();
           alert('Đã tạo trường học và tài khoản admin trường thành công!');
+        },
+        error: () => {
+          this.isSaving = false;
         }
       });
     }

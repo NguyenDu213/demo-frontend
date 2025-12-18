@@ -6,6 +6,7 @@ import { User, Gender, Scope } from '../models/user.model';
 import { MOCK_SCHOOLS } from '../data/mock-data';
 import { UserService } from './user.service';
 import { RoleService } from './role.service';
+import { UserContextService } from './user-context.service';
 
 // Set to true to use mock data instead of real API
 const USE_MOCK_DATA = true;
@@ -19,6 +20,8 @@ export class SchoolService {
   private userService?: UserService;
   private roleService?: RoleService;
 
+  private userContextService?: UserContextService;
+
   constructor(
     private http: HttpClient,
     private injector: Injector
@@ -26,6 +29,13 @@ export class SchoolService {
     if (USE_MOCK_DATA) {
       this.initializeMockData();
     }
+  }
+
+  private getUserContextService(): UserContextService {
+    if (!this.userContextService) {
+      this.userContextService = this.injector.get(UserContextService);
+    }
+    return this.userContextService;
   }
 
   private getUserService(): UserService {
@@ -43,9 +53,22 @@ export class SchoolService {
   }
 
   private initializeMockData(): void {
-    if (!localStorage.getItem(this.mockDataKey)) {
+    // Kiểm tra version để tự động reset khi có thay đổi mock data
+    const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
+    const storedVersion = localStorage.getItem('mock_schools_version');
+    
+    if (!localStorage.getItem(this.mockDataKey) || storedVersion !== MOCK_DATA_VERSION) {
       localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_SCHOOLS));
+      localStorage.setItem('mock_schools_version', MOCK_DATA_VERSION);
     }
+  }
+
+  /**
+   * Reset mock data về dữ liệu mặc định từ mock-data.ts
+   */
+  resetMockData(): void {
+    localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_SCHOOLS));
+    localStorage.setItem('mock_schools_version', '1.1');
   }
 
   private getMockSchools(): School[] {
@@ -110,16 +133,19 @@ export class SchoolService {
     const userService = this.getUserService();
     const roleService = this.getRoleService();
 
-    // Tìm role School Admin (roleId = 3)
+    // Tìm role SCHOOL_ADMIN (roleId = 3)
     return roleService.getRoles('SCHOOL').pipe(
       switchMap(roles => {
-        const schoolAdminRole = roles.find(r => r.roleName === 'School Admin' && r.schoolId === null);
+        const schoolAdminRole = roles.find(r => r.roleName === 'SCHOOL_ADMIN' && r.schoolId === null);
 
         if (!schoolAdminRole) {
-          throw new Error('Không tìm thấy role School Admin');
+          throw new Error('Không tìm thấy role SCHOOL_ADMIN');
         }
 
         // Tạo admin user với email là email của trường và password mặc định là 12345678
+        const userContextService = this.getUserContextService();
+        const currentUserId = userContextService.getCurrentUserId();
+        
         const adminUser: User = {
           fullName: school.principalName || `Admin ${school.name}`,
           gender: Gender.MALE,
@@ -132,8 +158,8 @@ export class SchoolService {
           scope: Scope.SCHOOL,
           schoolId: school.id!,
           roleId: schoolAdminRole.id!,
-          createBy: 1, // System admin
-          updateBy: 1
+          createBy: currentUserId,
+          updateBy: currentUserId
         };
 
         return userService.createUser(adminUser);

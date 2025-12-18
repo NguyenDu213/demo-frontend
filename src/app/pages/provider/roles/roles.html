@@ -86,6 +86,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Tên Role *</label>
           <input type="text" [(ngModel)]="selectedRole.roleName" name="roleName" required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+          <p class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Quản trị viên" → "QUAN_TRI_VIEN"</p>
         </div>
 
         <div>
@@ -106,11 +107,97 @@
             class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Hủy
           </button>
-          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Lưu
+          <button type="submit" [disabled]="isSaving" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!isSaving">Lưu</span>
+            <span *ngIf="isSaving">Đang lưu...</span>
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Gán Role Mới -->
+  <div *ngIf="isReassignModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    (click)="closeReassignModal()">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Gán Role Mới</h2>
+      
+      <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p class="text-sm text-yellow-800">
+          <strong>Không thể xóa role "{{ roleToDelete?.roleName }}"</strong> vì đang có <strong>{{ usersWithRole.length }}</strong> người dùng sử dụng.
+        </p>
+        <p class="text-sm text-yellow-800 mt-2">
+          Vui lòng chọn role mới để gán cho các người dùng này trước khi xóa role cũ.
+        </p>
+      </div>
+
+      <!-- Danh sách người dùng đang sử dụng role -->
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-3">Người dùng đang sử dụng role này:</h3>
+        <div class="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+          <ul class="space-y-2">
+            <li *ngFor="let user of usersWithRole" class="text-sm text-gray-700">
+              • {{ user.fullName }} ({{ user.email }})
+            </li>
+            <li *ngIf="usersWithRole.length === 0" class="text-sm text-gray-500">
+              Không có người dùng nào
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Chọn role mới -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Chọn role mới để gán cho các người dùng *
+        </label>
+        <select 
+          [(ngModel)]="selectedNewRoleId" 
+          name="newRoleId"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          [disabled]="isReassigning || alternativeRoles.length === 0">
+          <option [value]="null">-- Chọn role mới --</option>
+          <option *ngFor="let role of alternativeRoles" [value]="role.id">
+            {{ role.roleName }} - {{ role.description }}
+          </option>
+        </select>
+        <p *ngIf="alternativeRoles.length === 0" class="mt-2 text-sm text-red-600">
+          Không có role nào khác cùng loại. Vui lòng tạo role mới trước.
+        </p>
+      </div>
+
+      <!-- Danh sách role có thể chọn -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Các role có thể chọn:</h3>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <ul class="space-y-2">
+            <li *ngFor="let role of alternativeRoles" class="text-sm text-gray-700">
+              • <strong>{{ role.roleName }}</strong> - {{ role.description }}
+            </li>
+            <li *ngIf="alternativeRoles.length === 0" class="text-sm text-gray-500">
+              Không có role nào khác
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+        <button 
+          type="button" 
+          (click)="closeReassignModal()"
+          [disabled]="isReassigning"
+          class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          Hủy
+        </button>
+        <button 
+          type="button"
+          (click)="reassignAndDelete()"
+          [disabled]="!selectedNewRoleId || isReassigning || alternativeRoles.length === 0"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <span *ngIf="!isReassigning">Gán Role Mới và Xóa Role Cũ</span>
+          <span *ngIf="isReassigning">Đang xử lý...</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

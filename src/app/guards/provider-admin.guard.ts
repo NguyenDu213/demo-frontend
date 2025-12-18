@@ -12,7 +12,11 @@ export class ProviderAdminGuard implements CanActivate {
   ) {}
 
   canActivate(): boolean {
-    if (this.authService.isProviderAdmin()) {
+    // Đảm bảo role được load trước khi check
+    // Với mock data, role sẽ được load ngay lập tức trong isProviderAdmin()
+    const isAdmin = this.authService.isProviderAdmin();
+    
+    if (isAdmin) {
       return true;
     }
     

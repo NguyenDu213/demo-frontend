@@ -130,8 +130,9 @@
             class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Hủy
           </button>
-          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Lưu
+          <button type="submit" [disabled]="isSaving" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span *ngIf="!isSaving">Lưu</span>
+            <span *ngIf="isSaving">Đang lưu...</span>
           </button>
         </div>
       </form>
