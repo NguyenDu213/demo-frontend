@@ -39,16 +39,29 @@ export class LoginComponent {
                 this.isLoading = false;
                 const user = response.user;
                 
-                // Đợi một chút để đảm bảo role được cache (đặc biệt với mock data)
+                console.log('Login successful:', user);
+                
+                // Đợi một chút để đảm bảo role được cache
                 setTimeout(() => {
-                    if (user.scope === 'Provider') {
-                        this.router.navigate(['/provider/home']);
-                    } else if (user.scope === 'School') {
-                        this.router.navigate(['/school/home']);
+                    // Backend trả về "PROVIDER" hoặc "SCHOOL", normalize để check
+                    const scope = user.scope?.toUpperCase();
+                    console.log('Navigating with scope:', scope);
+                    
+                    if (scope === 'PROVIDER') {
+                        this.router.navigate(['/provider/home']).catch(err => {
+                            console.error('Navigation error:', err);
+                            this.errorMessage = 'Không thể chuyển đến trang quản lý';
+                        });
+                    } else if (scope === 'SCHOOL') {
+                        this.router.navigate(['/school/home']).catch(err => {
+                            console.error('Navigation error:', err);
+                            this.errorMessage = 'Không thể chuyển đến trang quản lý';
+                        });
                     } else {
+                        console.warn('Unknown scope:', scope);
                         this.router.navigate(['/']);
                     }
-                }, 100); // Đợi 100ms để đảm bảo role được cache
+                }, 200); // Đợi 200ms để đảm bảo role được cache và guards có thể check
             },
             error: (error) => {
                 this.isLoading = false;

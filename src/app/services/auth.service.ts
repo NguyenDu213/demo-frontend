@@ -2,14 +2,14 @@ import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, delay, firstValueFrom } from 'rxjs';
 import { tap, map, catchError, switchMap } from 'rxjs/operators';
-import { LoginRequest, LoginResponse } from '../models/auth.model';
+import { LoginRequest, LoginResponse, ApiResponse } from '../models/auth.model';
 import { User } from '../models/user.model';
 import { Role } from '../models/role.model';
 import { MOCK_USERS, MOCK_LOGIN_CREDENTIALS, MOCK_ROLES } from '../data/mock-data';
 import { RoleService } from './role.service';
 
 // Set to true to use mock data instead of real API
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 @Injectable({
     providedIn: 'root'
@@ -160,8 +160,15 @@ export class AuthService {
             });
         }
 
-        return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials)
+        return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/auth/login`, credentials)
             .pipe(
+                map(apiResponse => {
+                    // Extract data từ ApiResponse wrapper
+                    if (!apiResponse.status || !apiResponse.data) {
+                        throw new Error(apiResponse.message || 'Đăng nhập thất bại');
+                    }
+                    return apiResponse.data;
+                }),
                 switchMap(response => {
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('currentUser', JSON.stringify(response.user));
@@ -183,6 +190,11 @@ export class AuthService {
                         }),
                         map(() => response) // Return login response sau khi load role xong
                     );
+                }),
+                catchError(error => {
+                    // Xử lý error từ backend (GlobalExceptionHandler)
+                    const errorMessage = error.error?.message || error.message || 'Đăng nhập thất bại';
+                    throw { error: { message: errorMessage } };
                 })
             );
     }
@@ -210,12 +222,14 @@ export class AuthService {
 
     isProvider(): boolean {
         const user = this.getCurrentUser();
-        return user?.scope === 'Provider';
+        // Backend trả về "PROVIDER", normalize để match
+        return user?.scope?.toUpperCase() === 'PROVIDER';
     }
 
     isSchool(): boolean {
         const user = this.getCurrentUser();
-        return user?.scope === 'School';
+        // Backend trả về "SCHOOL", normalize để match
+        return user?.scope?.toUpperCase() === 'SCHOOL';
     }
 
     /**
@@ -225,7 +239,8 @@ export class AuthService {
      */
     isSchoolAdmin(): boolean {
         const user = this.getCurrentUser();
-        if (!user || user.scope !== 'School') {
+        // Backend trả về "SCHOOL", normalize để check
+        if (!user || user.scope?.toUpperCase() !== 'SCHOOL') {
             return false;
         }
 
@@ -270,7 +285,8 @@ export class AuthService {
      */
     isProviderAdmin(): boolean {
         const user = this.getCurrentUser();
-        if (!user || user.scope !== 'Provider') {
+        // Backend trả về "PROVIDER", normalize để check
+        if (!user || user.scope?.toUpperCase() !== 'PROVIDER') {
             return false;
         }
 
