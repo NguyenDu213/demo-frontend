@@ -17,6 +17,9 @@ export class ProviderSchoolsComponent implements OnInit {
   searchTerm: string = '';
   isSaving: boolean = false;
 
+  // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
+  fieldErrors: { [key: string]: string } = {};
+
   constructor(
     private schoolService: SchoolService,
     private cdr: ChangeDetectorRef
@@ -24,21 +27,6 @@ export class ProviderSchoolsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSchools();
-  }
-
-  loadSchools(): void {
-    this.isLoading = true;
-    this.schoolService.getAllSchools().subscribe({
-      next: (data) => {
-        this.schools = data;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      }
-    });
   }
 
   getEmptySchool(): School {
@@ -52,77 +40,127 @@ export class ProviderSchoolsComponent implements OnInit {
     };
   }
 
+  loadSchools(): void {
+    this.isLoading = true;
+    this.schoolService.getAllSchools().subscribe({
+      next: (data) => {
+        this.schools = data;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tải danh sách:', err);
+        this.isLoading = false;
+        if (err.status === 403) {
+          alert('Bạn không có quyền truy cập chức năng này (Yêu cầu SYSTEM_ADMIN).');
+        }
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedSchool = this.getEmptySchool();
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
   openEditModal(school: School): void {
     this.isEditMode = true;
-    this.selectedSchool = { ...school };
+    this.selectedSchool = { ...school }; // Clone object
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.selectedSchool = this.getEmptySchool();
+    this.fieldErrors = {};
     this.isSaving = false;
   }
 
-  saveSchool(): void {
-    // Prevent double submission
-    if (this.isSaving) {
-      return;
+  clearError(field: string): void {
+    if (this.fieldErrors[field]) {
+      delete this.fieldErrors[field];
     }
+  }
+
+  saveSchool(): void {
+    if (this.isSaving) return;
 
     this.isSaving = true;
+    this.fieldErrors = {};
 
-    if (this.isEditMode && this.selectedSchool.id) {
-      this.schoolService.updateSchool(this.selectedSchool.id, this.selectedSchool).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.loadSchools();
-          this.closeModal();
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+    const request = this.isEditMode && this.selectedSchool.id
+      ? this.schoolService.updateSchool(this.selectedSchool.id, this.selectedSchool)
+      : this.schoolService.createSchool(this.selectedSchool);
+
+    request.subscribe({
+      next: (response) => {
+        // Success Logic
+        this.isSaving = false;
+        this.loadSchools();
+        this.closeModal();
+        alert(this.isEditMode ? 'Cập nhật thành công!' : 'Thêm trường mới thành công!');
+      },
+      error: (err) => {
+        // Error Logic
+        this.isSaving = false;
+        console.error('Lỗi khi lưu:', err);
+        this.handleBackendError(err);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private handleBackendError(err: any): void {
+    const errorBody = err.error;
+    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
+      this.fieldErrors = errorBody.data;
+      console.log('Phát hiện lỗi Validation:', this.fieldErrors);
+    } else if (errorBody && errorBody.message) {
+      alert(errorBody.message);
     } else {
-      // Tạo trường mới - admin trường sẽ được tạo tự động
-      this.schoolService.createSchool(this.selectedSchool).subscribe({
-        next: () => {
-          this.isSaving = false;
-          this.loadSchools();
-          this.closeModal();
-          alert('Đã tạo trường học và tài khoản admin trường thành công!');
-        },
-        error: () => {
-          this.isSaving = false;
-        }
-      });
+      alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
     }
   }
 
   deleteSchool(id: number): void {
-    if (confirm('Bạn có chắc chắn muốn xóa trường học này?')) {
+    if (confirm('Bạn có chắc chắn muốn xóa trường này? Tất cả tài khoản và quyền liên quan đến trường này sẽ bị xóa.')) {
       this.schoolService.deleteSchool(id).subscribe({
         next: () => {
           this.loadSchools();
+          alert('Đã xóa thành công.');
+        },
+        error: (err) => {
+          console.error('Lỗi xóa:', err);
+          const msg = err.error?.message || 'Không thể xóa trường học này.';
+          alert(msg);
         }
       });
     }
   }
 
-  get filteredSchools(): School[] {
-    if (!this.searchTerm) {
-      return this.schools;
+  onSearch(): void {
+    if (!this.searchTerm || this.searchTerm.trim() === '') {
+      this.loadSchools();
+      return;
     }
-    const term = this.searchTerm.toLowerCase();
-    return this.schools.filter(school =>
-      school.name.toLowerCase().includes(term)
-    );
+
+    this.isLoading = true;
+    this.schoolService.searchSchools(this.searchTerm.trim()).subscribe({
+      next: (data) => {
+        this.schools = data;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tìm kiếm:', err);
+        this.isLoading = false;
+        this.schools = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 }
-
