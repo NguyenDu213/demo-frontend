@@ -9,9 +9,11 @@ export interface Role {
   typeRole: TypeRole;
   description: string;
   schoolId?: number | null;
+  schoolName?: string; // From backend RoleResponse
+  userCount?: number; // From backend RoleResponse
   createdAt?: string;
   updatedAt?: string;
-  createBy: number;
-  updateBy: number;
+  createBy?: number; // Optional in response
+  updateBy?: number; // Optional in response
 }
 

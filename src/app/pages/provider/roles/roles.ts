@@ -1,4 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RoleService } from '../../../services/role.service';
 import { UserService } from '../../../services/user.service';
 import { UserContextService } from '../../../services/user-context.service';
@@ -11,13 +13,14 @@ import { User } from '../../../models/user.model';
   styleUrls: ['./roles.scss'],
   standalone: false
 })
-export class ProviderRolesComponent implements OnInit {
+export class ProviderRolesComponent implements OnInit, OnDestroy {
   roles: Role[] = [];
   isLoading: boolean = true;
   isModalOpen: boolean = false;
   isEditMode: boolean = false;
   selectedRole: Role = this.getEmptyRole();
   searchTerm: string = '';
+  private searchSubject = new Subject<string>();
   typeRoles = Object.values(TypeRole);
   isSaving: boolean = false;
 
@@ -40,11 +43,28 @@ export class ProviderRolesComponent implements OnInit {
     // Khởi tạo selectedRole sau khi service đã được inject
     this.selectedRole = this.getEmptyRole();
     this.loadRoles();
+    
+    // Setup debounce cho search
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.loadRoles();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubject.complete();
   }
 
   loadRoles(): void {
     this.isLoading = true;
-    this.roleService.getRoles('PROVIDER').subscribe({
+    // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
+    const searchObservable = this.searchTerm.trim() 
+      ? this.roleService.searchRoles(this.searchTerm, 'PROVIDER')
+      : this.roleService.getRoles('PROVIDER');
+    
+    searchObservable.subscribe({
       next: (data) => {
         // Ẩn role "SYSTEM_ADMIN" dựa trên roleName (không dùng id vì có thể khác nhau giữa mock và real API)
         this.roles = data.filter(role => role.roleName !== 'SYSTEM_ADMIN');
@@ -261,16 +281,16 @@ export class ProviderRolesComponent implements OnInit {
   }
 
   get filteredRoles(): Role[] {
-    // Đảm bảo không hiển thị role "SYSTEM_ADMIN" trong kết quả search (dựa trên roleName)
-    let filtered = this.roles.filter(role => role.roleName !== 'SYSTEM_ADMIN');
-    
-    if (!this.searchTerm) {
-      return filtered;
-    }
-    const term = this.searchTerm.toLowerCase();
-    return filtered.filter(role =>
-      role.roleName.toLowerCase().includes(term)
-    );
+    // Roles đã được filter từ API search, chỉ cần ẩn SYSTEM_ADMIN
+    // Không cần filter thêm vì đã được xử lý trong loadRoles()
+    return this.roles.filter(role => role.roleName !== 'SYSTEM_ADMIN');
+  }
+
+  /**
+   * Gọi khi search term thay đổi
+   */
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchTerm);
   }
 
   /**

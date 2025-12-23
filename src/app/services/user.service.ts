@@ -1,203 +1,248 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { User } from '../models/user.model';
-import { MOCK_USERS } from '../data/mock-data';
-
-// Set to true to use mock data instead of real API
-const USE_MOCK_DATA = true;
+import { ApiResponse } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = 'http://localhost:8080/api'; // Update with your backend URL
-  private mockDataKey = 'mock_users';
+  private apiUrl = 'http://localhost:8080/api';
 
-  constructor(private http: HttpClient) {
-    if (USE_MOCK_DATA) {
-      this.initializeMockData();
-    }
-  }
+  constructor(
+    private http: HttpClient
+  ) { }
 
-  private initializeMockData(): void {
-    // Kiểm tra version để tự động reset khi có thay đổi mock data
-    const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
-    const storedVersion = localStorage.getItem('mock_users_version');
-    
-    if (!localStorage.getItem(this.mockDataKey) || storedVersion !== MOCK_DATA_VERSION) {
-      localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
-      localStorage.setItem('mock_users_version', MOCK_DATA_VERSION);
-    }
+  /**
+   * Lấy danh sách users
+   * Backend expects: GET /api/users
+   * Backend lấy userId từ JWT token trong header
+   */
+  getUsers(scope?: string, schoolId?: number): Observable<User[]> {
+    // Note: Backend lấy currentUserId từ JWT token trong Authorization header
+    // Backend filters based on current user's permissions
+    // scope and schoolId parameters are kept for compatibility but backend handles filtering
+
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users`)
+      .pipe(
+        map(apiResponse => {
+          if (!apiResponse.status || !apiResponse.data) {
+            throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách người dùng');
+          }
+          return apiResponse.data;
+        }),
+        catchError(error => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách người dùng';
+          throw { error: { message: errorMessage } };
+        })
+      );
   }
 
   /**
-   * Reset mock data về dữ liệu mặc định từ mock-data.ts
+   * Tìm kiếm users
+   * Backend expects: GET /api/users/search?keyword=xxx
+   * Backend lấy userId từ JWT token trong header
    */
-  resetMockData(): void {
-    localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
-    localStorage.setItem('mock_users_version', '1.1');
-  }
-
-  private getMockUsers(): User[] {
-    const data = localStorage.getItem(this.mockDataKey);
-    return data ? JSON.parse(data) : [];
-  }
-
-  private saveMockUsers(users: User[]): void {
-    localStorage.setItem(this.mockDataKey, JSON.stringify(users));
-  }
-
-  getUsers(scope?: string, schoolId?: number): Observable<User[]> {
-    if (USE_MOCK_DATA) {
-      let users = this.getMockUsers();
-      
-      if (scope) {
-        users = users.filter(u => u.scope === scope);
-      }
-      
-      if (schoolId !== undefined) {
-        users = users.filter(u => u.schoolId === schoolId);
-      }
-      
-      return of(users).pipe(delay(300));
-    }
-
+  searchUsers(keyword?: string, schoolId?: number): Observable<User[]> {
     let params = new HttpParams();
-    if (scope) {
-      params = params.set('scope', scope);
+
+    if (keyword) {
+      params = params.set('keyword', keyword);
     }
-    if (schoolId !== undefined) {
-      params = params.set('schoolId', schoolId.toString());
-    }
-    return this.http.get<User[]>(`${this.apiUrl}/users`, { params });
+    // Note: schoolId parameter kept for compatibility but backend handles filtering based on user's permissions
+
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users/search`, { params })
+      .pipe(
+        map(apiResponse => {
+          if (!apiResponse.status || !apiResponse.data) {
+            throw new Error(apiResponse.message || 'Lỗi khi tìm kiếm người dùng');
+          }
+          return apiResponse.data;
+        }),
+        catchError(error => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi tìm kiếm người dùng';
+          throw { error: { message: errorMessage } };
+        })
+      );
   }
 
   getUserById(id: number): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const user = users.find(u => u.id === id);
-      if (user) {
-        return of(user).pipe(delay(300));
-      }
-      return new Observable(observer => {
-        setTimeout(() => observer.error({ error: { message: 'Không tìm thấy người dùng' } }), 300);
-      });
-    }
-    return this.http.get<User>(`${this.apiUrl}/users/${id}`);
+    // Backend doesn't have a direct getUserById endpoint, use search or get all and filter
+    return this.getUsers().pipe(
+      map(users => {
+        const user = users.find(u => u.id === id);
+        if (!user) {
+          throw new Error('Không tìm thấy người dùng');
+        }
+        return user;
+      }),
+      catchError(error => {
+        const errorMessage = error.error?.message || error.message || 'Không tìm thấy người dùng';
+        throw { error: { message: errorMessage } };
+      })
+    );
   }
 
+  /**
+   * Tạo user mới
+   * Backend expects: POST /api/users
+   * Backend lấy userId từ JWT token trong header
+   */
   createUser(user: User): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const newId = Math.max(...users.map(u => u.id || 0), 0) + 1;
-      const newUser: User = {
-        ...user,
-        id: newId,
-        roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      users.push(newUser);
-      this.saveMockUsers(users);
-      return of(newUser).pipe(delay(500));
-    }
-    return this.http.post<User>(`${this.apiUrl}/users`, user);
+    // Convert User to backend format (remove id, createdAt, updatedAt, createBy, updateBy)
+    // Backend không mong đợi createBy và updateBy vì nó lấy từ JWT token
+    const { id, createdAt, updatedAt, createBy, updateBy, ...userRequest } = user;
+
+    // Convert birthYear từ "yyyy-MM-dd" sang "yyyy-MM-ddTHH:mm:ss" format cho LocalDateTime
+    const requestBody = {
+      ...userRequest,
+      birthYear: userRequest.birthYear && userRequest.birthYear.length === 10
+        ? userRequest.birthYear + 'T00:00:00'
+        : userRequest.birthYear
+    };
+
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/users`, requestBody)
+      .pipe(
+        map(apiResponse => {
+          if (!apiResponse.status || !apiResponse.data) {
+            throw new Error(apiResponse.message || 'Lỗi khi tạo người dùng');
+          }
+          return apiResponse.data;
+        }),
+        catchError(error => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi tạo người dùng';
+          throw { error: { message: errorMessage } };
+        })
+      );
   }
 
+  /**
+   * Cập nhật user
+   * Backend expects: PUT /api/users/{id}
+   * Backend lấy userId từ JWT token trong header
+   */
   updateUser(id: number, user: User): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const index = users.findIndex(u => u.id === id);
-      if (index !== -1) {
-        users[index] = {
-          ...user,
-          id,
-          roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
-          updatedAt: new Date().toISOString()
-        };
-        this.saveMockUsers(users);
-        return of(users[index]).pipe(delay(500));
-      }
-      return new Observable(observer => {
-        setTimeout(() => observer.error({ error: { message: 'Không tìm thấy người dùng' } }), 300);
-      });
-    }
-    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user);
+    // Convert User to backend format (remove id, createdAt, updatedAt, createBy)
+    const { id: userId, createdAt, updatedAt, createBy, ...userRequest } = user;
+
+    // Convert birthYear từ "yyyy-MM-dd" sang "yyyy-MM-ddTHH:mm:ss" format cho LocalDateTime
+    const requestBody = {
+      ...userRequest,
+      birthYear: userRequest.birthYear && userRequest.birthYear.length === 10
+        ? userRequest.birthYear + 'T00:00:00'
+        : userRequest.birthYear
+    };
+
+    return this.http.put<ApiResponse<User>>(`${this.apiUrl}/users/${id}`, requestBody)
+      .pipe(
+        map(apiResponse => {
+          if (!apiResponse.status || !apiResponse.data) {
+            throw new Error(apiResponse.message || 'Lỗi khi cập nhật người dùng');
+          }
+          return apiResponse.data;
+        }),
+        catchError(error => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi cập nhật người dùng';
+          throw { error: { message: errorMessage } };
+        })
+      );
   }
 
+  /**
+   * Xóa user
+   * Backend expects: DELETE /api/users/{id}
+   */
   deleteUser(id: number): Observable<void> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const filtered = users.filter(u => u.id !== id);
-      this.saveMockUsers(filtered);
-      return of(void 0).pipe(delay(500));
-    }
-    return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/users/${id}`)
+      .pipe(
+        map(apiResponse => {
+          if (!apiResponse.status) {
+            throw new Error(apiResponse.message || 'Lỗi khi xóa người dùng');
+          }
+          return void 0;
+        }),
+        catchError(error => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi khi xóa người dùng';
+          throw { error: { message: errorMessage } };
+        })
+      );
   }
 
   /**
    * Kiểm tra xem role có đang được sử dụng bởi user nào không
+   * GET /api/users/role-in-use/{roleId}
    */
   isRoleInUse(roleId: number): Observable<boolean> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const isInUse = users.some(u => u.roleId != null && Number(u.roleId) === Number(roleId));
-      return of(isInUse).pipe(delay(100));
-    }
-    return this.http.get<boolean>(`${this.apiUrl}/users/check-role/${roleId}`);
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/users/role-in-use/${roleId}`).pipe(
+      map(apiResponse => {
+        if (!apiResponse.status || apiResponse.data === undefined) {
+          // If error, assume role is in use to be safe
+          return true;
+        }
+        return apiResponse.data;
+      }),
+      catchError(() => {
+        // If error, assume role is in use to be safe
+        return new Observable<boolean>(observer => {
+          observer.next(true);
+          observer.complete();
+        });
+      })
+    );
   }
 
   /**
-   * Lấy số lượng user đang sử dụng role
+   * Lấy danh sách user đang sử dụng role
+   * GET /api/users/by-role/{roleId}
    */
   getUsersByRoleId(roleId: number): Observable<User[]> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const usersWithRole = users.filter(u => u.roleId != null && Number(u.roleId) === Number(roleId));
-      return of(usersWithRole).pipe(delay(100));
-    }
-    return this.http.get<User[]>(`${this.apiUrl}/users?roleId=${roleId}`);
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users/by-role/${roleId}`).pipe(
+      map(apiResponse => {
+        if (!apiResponse.status || !apiResponse.data) {
+          throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách users');
+        }
+        return apiResponse.data;
+      }),
+      catchError(error => {
+        const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách users';
+        throw { error: { message: errorMessage } };
+      })
+    );
   }
 
   /**
    * Gán role mới cho tất cả users đang sử dụng role cũ
+   * PUT /api/users/reassign-role?oldRoleId={oldRoleId}&newRoleId={newRoleId}
    */
   reassignRole(oldRoleId: number, newRoleId: number): Observable<{ success: boolean; message?: string; updatedCount?: number }> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const usersToUpdate = users.filter(u => u.roleId != null && Number(u.roleId) === Number(oldRoleId));
-      
-      if (usersToUpdate.length === 0) {
-        return of({ success: false, message: 'Không tìm thấy user nào đang sử dụng role này.' });
-      }
+    const params = new HttpParams()
+      .set('oldRoleId', oldRoleId.toString())
+      .set('newRoleId', newRoleId.toString());
 
-      // Cập nhật roleId cho tất cả users
-      usersToUpdate.forEach(user => {
-        const index = users.findIndex(u => u.id === user.id);
-        if (index !== -1) {
-          users[index] = {
-            ...users[index],
-            roleId: Number(newRoleId), // Đảm bảo roleId là number
-            updatedAt: new Date().toISOString()
+    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/users/reassign-role`, null, { params }).pipe(
+      map(apiResponse => {
+        if (!apiResponse.status) {
+          return {
+            success: false,
+            message: apiResponse.message || 'Không thể gán role mới'
           };
         }
-      });
-
-      this.saveMockUsers(users);
-      return of({ 
-        success: true, 
-        updatedCount: usersToUpdate.length,
-        message: `Đã gán role mới cho ${usersToUpdate.length} người dùng.`
-      }).pipe(delay(500));
-    }
-    return this.http.put<{ success: boolean; message?: string; updatedCount?: number }>(
-      `${this.apiUrl}/users/reassign-role`,
-      { oldRoleId, newRoleId }
+        const updatedCount = apiResponse.data ? parseInt(apiResponse.data, 10) : 0;
+        return {
+          success: true,
+          message: apiResponse.message || `Đã gán role mới cho ${updatedCount} người dùng`,
+          updatedCount: updatedCount
+        };
+      }),
+      catchError(error => {
+        const errorMessage = error.error?.message || error.message || 'Lỗi khi gán role mới';
+        return new Observable<{ success: boolean; message?: string; updatedCount?: number }>(observer => {
+          observer.next({ success: false, message: errorMessage });
+          observer.complete();
+        });
+      })
     );
   }
 }
-

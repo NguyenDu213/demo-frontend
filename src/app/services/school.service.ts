@@ -56,7 +56,7 @@ export class SchoolService {
     // Kiểm tra version để tự động reset khi có thay đổi mock data
     const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
     const storedVersion = localStorage.getItem('mock_schools_version');
-    
+
     if (!localStorage.getItem(this.mockDataKey) || storedVersion !== MOCK_DATA_VERSION) {
       localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_SCHOOLS));
       localStorage.setItem('mock_schools_version', MOCK_DATA_VERSION);
@@ -145,7 +145,7 @@ export class SchoolService {
         // Tạo admin user với email là email của trường và password mặc định là 12345678
         const userContextService = this.getUserContextService();
         const currentUserId = userContextService.getCurrentUserId();
-        
+
         const adminUser: User = {
           fullName: school.principalName || `Admin ${school.name}`,
           gender: Gender.MALE,
@@ -197,4 +197,3 @@ export class SchoolService {
     return this.http.delete<void>(`${this.apiUrl}/schools/${id}`);
   }
 }
-

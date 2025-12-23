@@ -1,4 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RoleService } from '../../../services/role.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
@@ -11,13 +13,14 @@ import { User } from '../../../models/user.model';
   styleUrls: ['./roles.scss'],
   standalone: false
 })
-export class SchoolRolesComponent implements OnInit {
+export class SchoolRolesComponent implements OnInit, OnDestroy {
   roles: Role[] = [];
   isLoading: boolean = true;
   isModalOpen: boolean = false;
   isEditMode: boolean = false;
   selectedRole: Role = this.getEmptyRole();
   searchTerm: string = '';
+  private searchSubject = new Subject<string>();
   currentUser: User | null = null;
   isSaving: boolean = false;
 
@@ -39,13 +42,30 @@ export class SchoolRolesComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadRoles();
+    
+    // Setup debounce cho search
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.loadRoles();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubject.complete();
   }
 
   loadRoles(): void {
     this.isLoading = true;
     const schoolId = this.currentUser?.schoolId ?? undefined;
     
-    this.roleService.getRoles('SCHOOL', schoolId).subscribe({
+    // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
+    const searchObservable = this.searchTerm.trim()
+      ? this.roleService.searchRoles(this.searchTerm, 'SCHOOL', schoolId)
+      : this.roleService.getRoles('SCHOOL', schoolId);
+    
+    searchObservable.subscribe({
       next: (data) => {
         // Filter bỏ role "SCHOOL_ADMIN" - không hiển thị trong danh sách
         this.roles = data.filter(role => role.roleName !== 'SCHOOL_ADMIN');
@@ -313,13 +333,16 @@ export class SchoolRolesComponent implements OnInit {
   }
 
   get filteredRoles(): Role[] {
-    if (!this.searchTerm) {
-      return this.roles;
-    }
-    const term = this.searchTerm.toLowerCase();
-    return this.roles.filter(role =>
-      role.roleName.toLowerCase().includes(term)
-    );
+    // Roles đã được filter từ API search, chỉ cần trả về danh sách
+    // Không cần filter thêm vì đã được xử lý trong loadRoles()
+    return this.roles;
+  }
+
+  /**
+   * Gọi khi search term thay đổi
+   */
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchTerm);
   }
 }
 

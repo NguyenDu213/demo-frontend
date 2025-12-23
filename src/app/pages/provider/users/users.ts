@@ -92,9 +92,9 @@ export class ProviderUsersComponent implements OnInit {
                   if (!userRole) return false;
                   
                   // Chỉ hiển thị:
-                  // 1. Tài khoản hệ thống (scope = Provider, không phải SYSTEM_ADMIN)
+                  // 1. Tài khoản hệ thống (scope = PROVIDER, không phải SYSTEM_ADMIN)
                   // 2. Tài khoản admin school (SCHOOL_ADMIN)
-                  return (user.scope === 'Provider' && userRole.roleName !== 'SYSTEM_ADMIN') 
+                  return (user.scope === 'PROVIDER' && userRole.roleName !== 'SYSTEM_ADMIN') 
                       || userRole.roleName === 'SCHOOL_ADMIN';
                 });
                 

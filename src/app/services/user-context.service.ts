@@ -8,7 +8,6 @@ import { Role } from '../models/role.model';
 
 /**
  * Service để quản lý context của user hiện tại và các helper methods
- * Đảm bảo tương thích với cả mock data và real API
  */
 @Injectable({
   providedIn: 'root'
@@ -23,11 +22,10 @@ export class UserContextService {
 
   /**
    * Lấy ID của user hiện tại
-   * Fallback về 1 nếu không có user (cho mock data)
    */
   getCurrentUserId(): number {
     const user = this.authService.getCurrentUser();
-    return user?.id || 1; // Fallback cho mock data
+    return user?.id || 0;
   }
 
   /**
@@ -75,7 +73,6 @@ export class UserContextService {
 
   /**
    * Kiểm tra user hiện tại có phải System Admin không
-   * Dựa trên roleName thay vì roleId để tương thích với cả mock và real API
    */
   isSystemAdmin(): Observable<boolean> {
     return this.hasRoleName('SYSTEM_ADMIN');
