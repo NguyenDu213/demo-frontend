@@ -24,6 +24,9 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
   typeRoles = Object.values(TypeRole);
   isSaving: boolean = false;
 
+  // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
+  fieldErrors: { [key: string]: string } = {};
+
   // Modal gán role mới
   isReassignModalOpen: boolean = false;
   roleToDelete: Role | null = null;
@@ -37,13 +40,13 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private userContextService: UserContextService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Khởi tạo selectedRole sau khi service đã được inject
     this.selectedRole = this.getEmptyRole();
     this.loadRoles();
-    
+
     // Setup debounce cho search
     this.searchSubject.pipe(
       debounceTime(500),
@@ -60,10 +63,10 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
   loadRoles(): void {
     this.isLoading = true;
     // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
-    const searchObservable = this.searchTerm.trim() 
+    const searchObservable = this.searchTerm.trim()
       ? this.roleService.searchRoles(this.searchTerm, 'PROVIDER')
       : this.roleService.getRoles('PROVIDER');
-    
+
     searchObservable.subscribe({
       next: (data) => {
         // Ẩn role "SYSTEM_ADMIN" dựa trên roleName (không dùng id vì có thể khác nhau giữa mock và real API)
@@ -93,19 +96,28 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedRole = this.getEmptyRole();
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
   openEditModal(role: Role): void {
     this.isEditMode = true;
     this.selectedRole = { ...role };
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.selectedRole = this.getEmptyRole();
+    this.fieldErrors = {};
     this.isSaving = false;
+  }
+
+  clearError(field: string): void {
+    if (this.fieldErrors[field]) {
+      delete this.fieldErrors[field];
+    }
   }
 
   saveRole(): void {
@@ -114,16 +126,21 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Reset lỗi trước khi validate
+    this.fieldErrors = {};
+
     // Chuẩn hóa tên role trước khi lưu
     const normalizedName = this.normalizeRoleName(this.selectedRole.roleName);
-    
+
     if (!normalizedName || normalizedName.length === 0) {
-      alert('Tên role không hợp lệ. Vui lòng nhập tên role.');
+      this.fieldErrors['roleName'] = 'Tên role không hợp lệ. Vui lòng nhập tên role.';
+      this.cdr.detectChanges();
       return;
     }
 
     if (!this.isValidRoleName(normalizedName)) {
-      alert('Tên role chỉ được chứa chữ hoa, số và dấu gạch dưới (_).');
+      this.fieldErrors['roleName'] = 'Tên role chỉ được chứa chữ hoa, số và dấu gạch dưới (_).';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -136,30 +153,40 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.selectedRole.id) {
       // Update updateBy với current user ID
       this.selectedRole.updateBy = currentUserId;
-      
+
       this.roleService.updateRole(this.selectedRole.id, this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
           this.loadRoles();
           this.closeModal();
+          alert('Cập nhật role thành công!');
         },
-        error: () => {
+        error: (err) => {
           this.isSaving = false;
+          console.error('Lỗi khi cập nhật role:', err);
+          console.error('Error structure:', JSON.stringify(err, null, 2));
+          this.handleBackendError(err);
+          this.cdr.detectChanges();
         }
       });
     } else {
       // Set createBy và updateBy khi tạo mới
       this.selectedRole.createBy = currentUserId;
       this.selectedRole.updateBy = currentUserId;
-      
+
       this.roleService.createRole(this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
           this.loadRoles();
           this.closeModal();
+          alert('Thêm role mới thành công!');
         },
-        error: () => {
+        error: (err) => {
           this.isSaving = false;
+          console.error('Lỗi khi tạo role:', err);
+          console.error('Error structure:', JSON.stringify(err, null, 2));
+          this.handleBackendError(err);
+          this.cdr.detectChanges();
         }
       });
     }
@@ -214,7 +241,7 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
       }
     });
 
-        // Load danh sách role khác cùng typeRole (trừ role đang xóa)
+    // Load danh sách role khác cùng typeRole (trừ role đang xóa)
     this.roleService.getRoles(role.typeRole).subscribe({
       next: (roles) => {
         // Filter dựa trên roleName thay vì id
@@ -303,21 +330,21 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/đ/g, 'd')
       .replace(/Đ/g, 'D');
-    
+
     // Chuyển thành chữ hoa và thay khoảng trắng bằng dấu gạch dưới
     let normalized = withoutAccents
       .toUpperCase()
       .replace(/\s+/g, '_');
-    
+
     // Loại bỏ các ký tự đặc biệt trừ dấu gạch dưới và chữ cái, số
     normalized = normalized.replace(/[^A-Z0-9_]/g, '');
-    
+
     // Loại bỏ nhiều dấu gạch dưới liên tiếp
     normalized = normalized.replace(/_+/g, '_');
-    
+
     // Loại bỏ dấu gạch dưới ở đầu và cuối
     normalized = normalized.replace(/^_+|_+$/g, '');
-    
+
     return normalized;
   }
 
@@ -330,6 +357,24 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     }
     // Chỉ cho phép chữ hoa, số và dấu gạch dưới
     return /^[A-Z0-9_]+$/.test(name);
+  }
+
+  private handleBackendError(err: any): void {
+    console.log('handleBackendError called with:', err);
+    const errorBody = err.error;
+    console.log('errorBody:', errorBody);
+
+    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
+      this.fieldErrors = errorBody.data;
+      console.log('Phát hiện lỗi Validation:', this.fieldErrors);
+      // Không hiển thị alert khi có validation errors, chỉ hiển thị trên form
+    } else if (errorBody && errorBody.message) {
+      console.log('Hiển thị alert với message:', errorBody.message);
+      alert(errorBody.message);
+    } else {
+      console.log('Lỗi không xác định');
+      alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
+    }
   }
 }
 

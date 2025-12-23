@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map, catchError, switchMap } from 'rxjs/operators';
+import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { Role } from '../models/role.model';
 import { ApiResponse } from '../models/auth.model';
 import { UserService } from './user.service';
@@ -17,6 +17,19 @@ export class RoleService {
     private userService: UserService
   ) { }
 
+  // Hàm lấy Header có chứa Token
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
   /**
    * Lấy danh sách roles
    * Backend expects: GET /api/roles?typeRole=PROVIDER hoặc /api/roles?typeRole=SCHOOL&schoolId=1
@@ -30,8 +43,10 @@ export class RoleService {
       params = params.set('schoolId', schoolId.toString());
     }
 
-    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles`, { params })
+    console.log('[API Request] GET /roles', typeRole ? `typeRole=${typeRole}` : '', schoolId ? `schoolId=${schoolId}` : '');
+    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles`, { params, headers: this.getHeaders() })
       .pipe(
+        tap(response => console.log('[API Response] GET /roles:', response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách role');
@@ -39,6 +54,7 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
+          console.error('[API Error] GET /roles:', error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách role';
           throw { error: { message: errorMessage } };
         })
@@ -62,8 +78,10 @@ export class RoleService {
       params = params.set('schoolId', schoolId.toString());
     }
 
-    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles/search`, { params })
+    console.log('[API Request] GET /roles/search', keyword ? `keyword=${keyword}` : '', typeRole ? `typeRole=${typeRole}` : '', schoolId ? `schoolId=${schoolId}` : '');
+    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles/search`, { params, headers: this.getHeaders() })
       .pipe(
+        tap(response => console.log('[API Response] GET /roles/search:', response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi tìm kiếm role');
@@ -71,6 +89,7 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
+          console.error('[API Error] GET /roles/search:', error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi tìm kiếm role';
           throw { error: { message: errorMessage } };
         })
@@ -82,8 +101,10 @@ export class RoleService {
    * Backend expects: GET /api/roles/{id}
    */
   getRoleById(id: number): Observable<Role> {
-    return this.http.get<ApiResponse<Role>>(`${this.apiUrl}/roles/${id}`)
+    console.log(`[API Request] GET /roles/${id}`);
+    return this.http.get<ApiResponse<Role>>(`${this.apiUrl}/roles/${id}`, { headers: this.getHeaders() })
       .pipe(
+        tap(response => console.log(`[API Response] GET /roles/${id}:`, response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Không tìm thấy role');
@@ -91,6 +112,7 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
+          console.error(`[API Error] GET /roles/${id}:`, error);
           const errorMessage = error.error?.message || error.message || 'Không tìm thấy role';
           throw { error: { message: errorMessage } };
         })
@@ -105,8 +127,10 @@ export class RoleService {
     // Convert Role to backend format (remove id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName)
     const { id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName, ...roleRequest } = role as any;
 
-    return this.http.post<ApiResponse<Role>>(`${this.apiUrl}/roles`, roleRequest)
+    console.log('[API Request] POST /roles Payload:', roleRequest);
+    return this.http.post<ApiResponse<Role>>(`${this.apiUrl}/roles`, roleRequest, { headers: this.getHeaders() })
       .pipe(
+        tap(response => console.log('[API Response] POST /roles:', response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi tạo role');
@@ -114,8 +138,9 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
+          console.error('[API Error] POST /roles:', error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi tạo role';
-          throw { error: { message: errorMessage } };
+          throw { error: { message: errorMessage, data: error.error?.data } };
         })
       );
   }
@@ -128,8 +153,10 @@ export class RoleService {
     // Convert Role to backend format (remove id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName)
     const { id: roleId, createdAt, updatedAt, createBy, updateBy, userCount, schoolName, ...roleRequest } = role as any;
 
-    return this.http.put<ApiResponse<Role>>(`${this.apiUrl}/roles/${id}`, roleRequest)
+    console.log(`[API Request] PUT /roles/${id} Payload:`, roleRequest);
+    return this.http.put<ApiResponse<Role>>(`${this.apiUrl}/roles/${id}`, roleRequest, { headers: this.getHeaders() })
       .pipe(
+        tap(response => console.log(`[API Response] PUT /roles/${id}:`, response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi cập nhật role');
@@ -137,8 +164,9 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
+          console.error(`[API Error] PUT /roles/${id}:`, error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi cập nhật role';
-          throw { error: { message: errorMessage } };
+          throw { error: { message: errorMessage, data: error.error?.data } };
         })
       );
   }
@@ -149,7 +177,9 @@ export class RoleService {
    * Backend will return error if role is in use
    */
   deleteRole(id: number): Observable<{ success: boolean; message?: string }> {
-    return this.http.delete<ApiResponse<string>>(`${this.apiUrl}/roles/${id}`).pipe(
+    console.log(`[API Request] DELETE /roles/${id}`);
+    return this.http.delete<ApiResponse<string>>(`${this.apiUrl}/roles/${id}`, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log(`[API Response] DELETE /roles/${id}:`, response)),
       map(apiResponse => {
         if (!apiResponse.status) {
           throw new Error(apiResponse.message || 'Lỗi khi xóa role');
@@ -157,6 +187,7 @@ export class RoleService {
         return { success: true };
       }),
       catchError((error) => {
+        console.error(`[API Error] DELETE /roles/${id}:`, error);
         // Backend sẽ trả về lỗi nếu role đang được sử dụng
         const message = error.error?.message || error.message || 'Không thể xóa role này.';
         return new Observable<{ success: boolean; message?: string }>(observer => {

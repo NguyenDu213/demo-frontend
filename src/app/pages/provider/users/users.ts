@@ -29,6 +29,9 @@ export class ProviderUsersComponent implements OnInit {
   scopes = Object.values(Scope);
   isSaving: boolean = false;
 
+  // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
+  fieldErrors: { [key: string]: string } = {};
+
   constructor(
     private userService: UserService,
     private roleService: RoleService,
@@ -166,6 +169,7 @@ export class ProviderUsersComponent implements OnInit {
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedUser = this.getEmptyUser();
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
@@ -173,6 +177,7 @@ export class ProviderUsersComponent implements OnInit {
     this.isEditMode = true;
     this.selectedUser = { ...user };
     this.originalEmail = user.email; // Lưu email gốc
+    this.fieldErrors = {}; // Reset lỗi cũ
 
     // Nếu là admin trường, load thêm SCHOOL_ADMIN role vào danh sách
     const userRole = this.allRoles.find(r => r.id === user.roleId);
@@ -196,8 +201,15 @@ export class ProviderUsersComponent implements OnInit {
     this.originalEmail = '';
     this.showPassword = false;
     this.isSaving = false;
+    this.fieldErrors = {};
     // Reset roles về chỉ PROVIDER roles khi đóng modal
     this.loadRoles();
+  }
+
+  clearError(field: string): void {
+    if (this.fieldErrors[field]) {
+      delete this.fieldErrors[field];
+    }
   }
 
   saveUser(): void {
@@ -207,6 +219,7 @@ export class ProviderUsersComponent implements OnInit {
     }
 
     this.isSaving = true;
+    this.fieldErrors = {};
     const currentUserId = this.userContextService.getCurrentUserId();
 
     if (this.isEditMode && this.selectedUser.id) {
@@ -231,9 +244,13 @@ export class ProviderUsersComponent implements OnInit {
             this.isSaving = false;
             this.loadUsers();
             this.closeModal();
+            alert('Cập nhật người dùng thành công!');
           },
-          error: () => {
+          error: (err) => {
             this.isSaving = false;
+            console.error('Lỗi khi cập nhật người dùng:', err);
+            this.handleBackendError(err);
+            this.cdr.detectChanges();
           }
         });
       } else {
@@ -243,9 +260,13 @@ export class ProviderUsersComponent implements OnInit {
             this.isSaving = false;
             this.loadUsers();
             this.closeModal();
+            alert('Cập nhật người dùng thành công!');
           },
-          error: () => {
+          error: (err) => {
             this.isSaving = false;
+            console.error('Lỗi khi cập nhật người dùng:', err);
+            this.handleBackendError(err);
+            this.cdr.detectChanges();
           }
         });
       }
@@ -259,9 +280,13 @@ export class ProviderUsersComponent implements OnInit {
           this.isSaving = false;
           this.loadUsers();
           this.closeModal();
+          alert('Thêm người dùng mới thành công!');
         },
-        error: () => {
+        error: (err) => {
           this.isSaving = false;
+          console.error('Lỗi khi tạo người dùng:', err);
+          this.handleBackendError(err);
+          this.cdr.detectChanges();
         }
       });
     }
@@ -299,6 +324,18 @@ export class ProviderUsersComponent implements OnInit {
     // Tìm trong allRoles để bao gồm cả PROVIDER và SCHOOL roles
     const role = this.allRoles.find(r => r.id === roleId);
     return role ? role.roleName : 'N/A';
+  }
+
+  private handleBackendError(err: any): void {
+    const errorBody = err.error;
+    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
+      this.fieldErrors = errorBody.data;
+      console.log('Phát hiện lỗi Validation:', this.fieldErrors);
+    } else if (errorBody && errorBody.message) {
+      alert(errorBody.message);
+    } else {
+      alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
+    }
   }
 }
 
