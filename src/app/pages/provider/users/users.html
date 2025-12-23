@@ -16,9 +16,9 @@
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
         <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên"
-          (keyup.enter)="searchTerm = searchTerm"
+          (keyup.enter)="onSearch()"
           class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-        <button type="button" (click)="searchTerm = searchTerm"
+        <button type="button" *ngIf="searchTerm" (click)="searchTerm = ''; loadUsers()"
           class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -26,7 +26,7 @@
           </svg>
         </button>
       </div>
-      <button type="button" (click)="searchTerm = searchTerm"
+      <button type="button" (click)="onSearch()"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -45,6 +45,7 @@
           <tr>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Họ tên</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Địa chỉ</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Số điện thoại</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Giới tính</th>
             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Role</th>
@@ -53,13 +54,14 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr *ngFor="let user of filteredUsers" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ user.fullName }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ user.phoneNumber }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ user.gender }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ getRoleName(user.roleId) }}</td>
-            <td class="px-6 py-4 text-sm">
+          <tr *ngFor="let user of users" class="hover:bg-gray-50">
+            <td class="px-4 py-4 text-sm text-gray-800 font-medium">{{ user.fullName }}</td>
+            <td class="px-4 py-4 text-sm text-gray-600">{{ user.email }}</td>
+            <td class="px-4 py-4 text-sm text-gray-600">{{ user.address }}</td>
+            <td class="px-4 py-4 text-sm text-gray-600">{{ user.phoneNumber }}</td>
+            <td class="px-4 py-4 text-sm text-gray-600">{{ user.gender }}</td>
+            <td class="px-4 py-4 text-sm text-gray-600">{{ getRoleName(user.roleId) }}</td>
+            <td class="px-4 py-4 text-sm">
               <span
                 [class]="user.isActive ? 'px-2 py-1 bg-green-100 text-green-700 rounded' : 'px-2 py-1 bg-red-100 text-red-700 rounded'">
                 {{ user.isActive ? 'Hoạt động' : 'Không hoạt động' }}
@@ -78,7 +80,7 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="filteredUsers.length === 0">
+          <tr *ngIf="users.length === 0">
             <td colspan="7" class="px-6 py-8 text-center text-gray-500">Không có dữ liệu</td>
           </tr>
         </tbody>

@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, of, delay, tap, map } from 'rxjs';
 import { User } from '../models/user.model';
 import { MOCK_USERS } from '../data/mock-data';
+import { ApiResponse } from '../models/auth.model';
 
 // Set to true to use mock data instead of real API
 const USE_MOCK_DATA = true;
@@ -11,15 +12,49 @@ const USE_MOCK_DATA = true;
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = 'http://localhost:8080/api'; // Update with your backend URL
+  private apiUrl = 'http://localhost:8080/api/users'; // Update with your backend URL
   private mockDataKey = 'mock_users';
 
   constructor(private http: HttpClient) {
     if (USE_MOCK_DATA) {
       this.initializeMockData();
     }
+    
+  }
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
   }
 
+    getAllUsers(): Observable<User[]> {
+      console.log('[API Request] GET /users');
+      return this.http.get<ApiResponse<User[]>>(this.apiUrl, { headers: this.getHeaders() })
+        .pipe(
+          tap(response => console.log('[API Response] GET /users:', response)),
+          map(response => response.data) // Bóc tách lấy data thật
+        );
+    }
+
+      // Tìm kiếm trường
+      searchUsers(name: string): Observable<User[]> {
+        const params = new HttpParams().set('name', name);
+        console.log('[API Request] GET /users/search param:', name);
+        return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/search`, {
+          headers: this.getHeaders(),
+          params: params
+        }).pipe(
+          tap(response => console.log('[API Response] Search:', response)),
+          map(response => response.data)
+        );
+      }
+  
   private initializeMockData(): void {
     // Kiểm tra version để tự động reset khi có thay đổi mock data
     const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
