@@ -64,13 +64,14 @@ export class ProviderUsersComponent implements OnInit {
   }
 
   onSearch(): void {
-    if (!this.searchTerm || this.searchTerm.trim() === ' ') {
+    const keyword = this.searchTerm?.trim();
+    if (!keyword) {
       this.loadUsers();
       return;
     }
 
     this.isLoading = true;
-    this.userService.searchUsers(this.searchTerm.trim()).subscribe({
+    this.userService.searchUsers(keyword).subscribe({
       next: (data) => {
         this.users = data;
         this.isLoading = false;

@@ -32,7 +32,7 @@ export class UserService {
     }
     return headers;
   }
-
+    // lấy ds user
     getAllUsers(): Observable<User[]> {
       console.log('[API Request] GET /users');
       return this.http.get<ApiResponse<User[]>>(this.apiUrl, { headers: this.getHeaders() })
@@ -42,11 +42,11 @@ export class UserService {
         );
     }
 
-      // Tìm kiếm trường
+      // Tìm kiếm user
       searchUsers(name: string): Observable<User[]> {
         const params = new HttpParams().set('name', name);
         console.log('[API Request] GET /users/search param:', name);
-        return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/search`, {
+        return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/search?keyword=` + name, {
           headers: this.getHeaders(),
           params: params
         }).pipe(
@@ -54,6 +54,16 @@ export class UserService {
           map(response => response.data)
         );
       }
+       // Tạo mới user
+        createUser(user: User): Observable<User> {
+          console.log('[API Request] POST /users Payload:', user);
+          return this.http.post<ApiResponse<User>>(this.apiUrl, user, { headers: this.getHeaders() })
+            .pipe(
+              tap(response => console.log('[API Response] POST /schools:', response)),
+              map(response => response.data)
+            );
+        }
+      
   
   private initializeMockData(): void {
     // Kiểm tra version để tự động reset khi có thay đổi mock data
@@ -122,7 +132,7 @@ export class UserService {
     return this.http.get<User>(`${this.apiUrl}/users/${id}`);
   }
 
-  createUser(user: User): Observable<User> {
+  create1User(user: User): Observable<User> {
     if (USE_MOCK_DATA) {
       const users = this.getMockUsers();
       const newId = Math.max(...users.map(u => u.id || 0), 0) + 1;
