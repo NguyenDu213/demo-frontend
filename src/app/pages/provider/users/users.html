@@ -15,10 +15,11 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên"
-          (keyup.enter)="searchTerm = searchTerm"
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên, email, số điện thoại"
+          (keyup.enter)="onSearchChange()"
+          (input)="onSearchChange()"
           class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-        <button type="button" (click)="searchTerm = searchTerm"
+        <button type="button" (click)="onSearchChange()"
           class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -26,7 +27,7 @@
           </svg>
         </button>
       </div>
-      <button type="button" (click)="searchTerm = searchTerm"
+      <button type="button" (click)="onSearchChange()"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -39,7 +40,11 @@
 
   <!-- Users Table -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div *ngIf="isLoading" class="p-8 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">Đang tải dữ liệu...</p>
+    </div>
+    <div *ngIf="!isLoading" class="overflow-x-auto">
       <table class="w-full">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
@@ -78,7 +83,7 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="filteredUsers.length === 0">
+          <tr *ngIf="filteredUsers.length === 0 && !isLoading">
             <td colspan="7" class="px-6 py-8 text-center text-gray-500">Không có dữ liệu</td>
           </tr>
         </tbody>

@@ -1,4 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UserService } from '../../../services/user.service';
 import { RoleService } from '../../../services/role.service';
 import { SchoolService } from '../../../services/school.service';
@@ -14,7 +16,7 @@ import { School } from '../../../models/school.model';
   styleUrls: ['./users.scss'],
   standalone: false
 })
-export class ProviderUsersComponent implements OnInit {
+export class ProviderUsersComponent implements OnInit, OnDestroy {
   users: User[] = [];
   roles: Role[] = [];
   allRoles: Role[] = []; // Tất cả roles để hiển thị role name
@@ -25,6 +27,7 @@ export class ProviderUsersComponent implements OnInit {
   selectedUser: User = this.getEmptyUser();
   originalEmail: string = ''; // Lưu email gốc khi edit
   searchTerm: string = '';
+  private searchSubject = new Subject<string>();
   genders = Object.values(Gender);
   scopes = Object.values(Scope);
   isSaving: boolean = false;
@@ -48,6 +51,18 @@ export class ProviderUsersComponent implements OnInit {
     this.loadRoles();
     this.loadAllRoles(); // Load tất cả roles để hiển thị role name
     this.loadSchools();
+
+    // Setup debounce cho search
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.loadUsers();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubject.complete();
   }
 
   loadSchools(): void {
@@ -90,7 +105,7 @@ export class ProviderUsersComponent implements OnInit {
                 const allRoles = [...providerRoles, ...schoolRoles];
                 
                 // Filter users dựa trên roleName thay vì roleId
-                this.users = data.filter(user => {
+                let filteredUsers = data.filter(user => {
                   const userRole = allRoles.find(r => r.id === user.roleId);
                   if (!userRole) return false;
                   
@@ -100,7 +115,18 @@ export class ProviderUsersComponent implements OnInit {
                   return (user.scope === 'PROVIDER' && userRole.roleName !== 'SYSTEM_ADMIN') 
                       || userRole.roleName === 'SCHOOL_ADMIN';
                 });
+
+                // Filter theo search term nếu có
+                if (this.searchTerm && this.searchTerm.trim()) {
+                  const term = this.searchTerm.toLowerCase();
+                  filteredUsers = filteredUsers.filter(user =>
+                    user.fullName.toLowerCase().includes(term) ||
+                    user.email.toLowerCase().includes(term) ||
+                    user.phoneNumber?.toLowerCase().includes(term)
+                  );
+                }
                 
+                this.users = filteredUsers;
                 this.isLoading = false;
                 this.cdr.detectChanges();
               }
@@ -303,15 +329,15 @@ export class ProviderUsersComponent implements OnInit {
   }
 
   get filteredUsers(): User[] {
-    // Users đã được filter trong loadUsers(), chỉ cần filter theo search term
-    if (!this.searchTerm) {
-      return this.users;
-    }
+    // Users đã được filter trong loadUsers()
+    return this.users;
+  }
 
-    const term = this.searchTerm.toLowerCase();
-    return this.users.filter(user =>
-      user.fullName.toLowerCase().includes(term)
-    );
+  /**
+   * Gọi khi search term thay đổi
+   */
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchTerm);
   }
 
   isAdminUser(): boolean {
