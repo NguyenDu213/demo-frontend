@@ -141,9 +141,9 @@ export class UserService {
       .set('newRoleId', newRoleId.toString());
 
     console.log(`[API Request] PUT /users/reassign-role?oldRoleId=${oldRoleId}&newRoleId=${newRoleId}`);
-    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/reassign-role`, null, { 
-      headers: this.getHeaders(), 
-      params 
+    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/reassign-role`, null, {
+      headers: this.getHeaders(),
+      params
     }).pipe(
       tap(response => console.log('[API Response] Reassign role:', response)),
       map(response => {
