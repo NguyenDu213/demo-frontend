@@ -1,15 +1,11 @@
 import { Injectable, Injector } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of, delay, firstValueFrom } from 'rxjs';
+import { Observable, BehaviorSubject, of } from 'rxjs';
 import { tap, map, catchError, switchMap } from 'rxjs/operators';
 import { LoginRequest, LoginResponse, ApiResponse } from '../models/auth.model';
 import { User } from '../models/user.model';
 import { Role } from '../models/role.model';
-import { MOCK_USERS, MOCK_LOGIN_CREDENTIALS, MOCK_ROLES } from '../data/mock-data';
 import { RoleService } from './role.service';
-
-// Set to true to use mock data instead of real API
-const USE_MOCK_DATA = false;
 
 @Injectable({
     providedIn: 'root'
@@ -30,24 +26,7 @@ export class AuthService {
         if (savedUser) {
             const user = JSON.parse(savedUser);
             this.currentUserSubject.next(user);
-            
-            // Load role ngay lập tức (synchronous với mock data)
-            // Đảm bảo role có sẵn khi guard check
-            // Với mock data, load trực tiếp từ MOCK_ROLES để có sẵn ngay
-            if (USE_MOCK_DATA && user.roleId) {
-                const role = MOCK_ROLES.find(r => r.id === user.roleId);
-                if (role) {
-                    this.currentUserRoleCache = role;
-                    // Chỉ cache vào localStorage nếu chưa có
-                    if (!localStorage.getItem('currentUserRole')) {
-                        localStorage.setItem('currentUserRole', JSON.stringify(role));
-                    }
-                } else {
-                    this.loadCurrentUserRole();
-                }
-            } else {
-                this.loadCurrentUserRole();
-            }
+            this.loadCurrentUserRole();
         }
     }
 
@@ -61,7 +40,6 @@ export class AuthService {
     /**
      * Load và cache role của user hiện tại
      * Cache trong memory và localStorage để đảm bảo luôn có sẵn
-     * Với mock data, load ngay từ MOCK_ROLES để đảm bảo có sẵn ngay lập tức
      */
     private loadCurrentUserRole(): void {
         const user = this.getCurrentUser();
@@ -86,17 +64,7 @@ export class AuthService {
             }
         }
 
-        // Với mock data, load ngay từ MOCK_ROLES để có sẵn ngay lập tức
-        if (USE_MOCK_DATA) {
-            const role = MOCK_ROLES.find(r => r.id === user.roleId);
-            if (role) {
-                this.currentUserRoleCache = role;
-                localStorage.setItem('currentUserRole', JSON.stringify(role));
-                return;
-            }
-        }
-
-        // Load role từ service và cache lại (cho real API)
+        // Load role từ service và cache lại
         this.getRoleService().getRoleById(user.roleId).subscribe({
             next: (role) => {
                 this.currentUserRoleCache = role;
@@ -113,53 +81,6 @@ export class AuthService {
     }
 
     login(credentials: LoginRequest): Observable<LoginResponse> {
-        if (USE_MOCK_DATA) {
-            // Tìm user trực tiếp trong MOCK_USERS thay vì dùng MOCK_LOGIN_CREDENTIALS
-            const user = MOCK_USERS.find(
-                u => u.email === credentials.email && u.password === credentials.password && u.isActive === true
-            );
-
-            if (user) {
-                const response: LoginResponse = {
-                    token: 'mock-jwt-token-' + Date.now(),
-                    user: {
-                        id: user.id!,
-                        email: user.email,
-                        fullName: user.fullName,
-                        scope: user.scope,
-                        schoolId: user.schoolId ?? undefined,
-                        roleId: user.roleId
-                    }
-                };
-
-                localStorage.setItem('token', response.token);
-                localStorage.setItem('currentUser', JSON.stringify(response.user));
-                this.currentUserSubject.next(response.user as any);
-                
-                // Load và cache role ngay lập tức từ MOCK_ROLES (synchronous)
-                // Đảm bảo role có sẵn khi guard check
-                // Với mock data, load trực tiếp từ MOCK_ROLES để có sẵn ngay
-                if (USE_MOCK_DATA && user.roleId) {
-                    const role = MOCK_ROLES.find(r => r.id === user.roleId);
-                    if (role) {
-                        this.currentUserRoleCache = role;
-                        localStorage.setItem('currentUserRole', JSON.stringify(role));
-                    }
-                } else {
-                    this.loadCurrentUserRole();
-                }
-
-                return of(response).pipe(delay(500)); // Simulate network delay
-            }
-
-            // Return error
-            return new Observable(observer => {
-                setTimeout(() => {
-                    observer.error({ error: { message: 'Email hoặc mật khẩu không đúng' } });
-                }, 500);
-            });
-        }
-
         return this.http.post<ApiResponse<LoginResponse>>(`${this.apiUrl}/auth/login`, credentials)
             .pipe(
                 map(apiResponse => {
@@ -173,7 +94,7 @@ export class AuthService {
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('currentUser', JSON.stringify(response.user));
                     this.currentUserSubject.next(response.user as any);
-                    
+
                     // Load role từ API và đợi load xong trước khi return
                     return this.getRoleService().getRoleById(response.user.roleId).pipe(
                         tap(role => {
@@ -234,7 +155,7 @@ export class AuthService {
 
     /**
      * Kiểm tra user hiện tại có phải School Admin không
-     * Dựa trên roleName thay vì roleId để tương thích với cả mock và real API
+     * Dựa trên roleName
      * Role được cache khi login và load từ localStorage nếu cần
      */
     isSchoolAdmin(): boolean {
@@ -244,7 +165,7 @@ export class AuthService {
             return false;
         }
 
-        // Nếu chưa có cache trong memory, thử load từ localStorage hoặc MOCK_ROLES
+        // Nếu chưa có cache trong memory, thử load từ localStorage
         if (!this.currentUserRoleCache) {
             const cachedRole = localStorage.getItem('currentUserRole');
             if (cachedRole) {
@@ -257,16 +178,7 @@ export class AuthService {
                     // Invalid cache, try to load
                 }
             }
-            
-            // Nếu vẫn chưa có cache và đang dùng mock data, load ngay từ MOCK_ROLES
-            if (!this.currentUserRoleCache && USE_MOCK_DATA && user.roleId) {
-                const role = MOCK_ROLES.find(r => r.id === user.roleId);
-                if (role) {
-                    this.currentUserRoleCache = role;
-                    localStorage.setItem('currentUserRole', JSON.stringify(role));
-                }
-            }
-            
+
             // Nếu vẫn chưa có cache, load từ service (async)
             if (!this.currentUserRoleCache) {
                 this.loadCurrentUserRole();
@@ -280,7 +192,7 @@ export class AuthService {
 
     /**
      * Kiểm tra user hiện tại có phải Provider Admin (System Admin) không
-     * Dựa trên roleName thay vì roleId để tương thích với cả mock và real API
+     * Dựa trên roleName
      * Role được cache khi login và load từ localStorage nếu cần
      */
     isProviderAdmin(): boolean {
@@ -290,7 +202,7 @@ export class AuthService {
             return false;
         }
 
-        // Nếu chưa có cache trong memory, thử load từ localStorage hoặc MOCK_ROLES
+        // Nếu chưa có cache trong memory, thử load từ localStorage
         if (!this.currentUserRoleCache) {
             const cachedRole = localStorage.getItem('currentUserRole');
             if (cachedRole) {
@@ -303,19 +215,8 @@ export class AuthService {
                     // Invalid cache, try to load
                 }
             }
-            
-            // Nếu vẫn chưa có cache và đang dùng mock data, load ngay từ MOCK_ROLES
-            // Đây là fallback quan trọng để đảm bảo role luôn có sẵn
-            if (!this.currentUserRoleCache && USE_MOCK_DATA && user.roleId) {
-                const role = MOCK_ROLES.find(r => r.id === user.roleId);
-                if (role) {
-                    this.currentUserRoleCache = role;
-                    localStorage.setItem('currentUserRole', JSON.stringify(role));
-                }
-            }
-            
+
             // Nếu vẫn chưa có cache, load từ service (async)
-            // Nhưng với mock data, điều này không nên xảy ra
             if (!this.currentUserRoleCache) {
                 this.loadCurrentUserRole();
                 return false;
@@ -329,11 +230,10 @@ export class AuthService {
 
     /**
      * Lấy ID của user hiện tại
-     * Fallback về 1 nếu không có user (cho mock data)
      */
     getCurrentUserId(): number {
         const user = this.getCurrentUser();
-        return user?.id || 1;
+        return user?.id || 0;
     }
 }
 

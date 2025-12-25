@@ -1,203 +1,159 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { User } from '../models/user.model';
-import { MOCK_USERS } from '../data/mock-data';
-
-// Set to true to use mock data instead of real API
-const USE_MOCK_DATA = true;
+import { ApiResponse } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = 'http://localhost:8080/api'; // Update with your backend URL
-  private mockDataKey = 'mock_users';
+  private apiUrl = 'http://localhost:8080/api/users';
 
-  constructor(private http: HttpClient) {
-    if (USE_MOCK_DATA) {
-      this.initializeMockData();
+  constructor(private http: HttpClient) { }
+
+  // Hàm lấy Header có chứa Token
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
     }
+    return headers;
   }
 
-  private initializeMockData(): void {
-    // Kiểm tra version để tự động reset khi có thay đổi mock data
-    const MOCK_DATA_VERSION = '1.1'; // Tăng version này khi cập nhật mock data
-    const storedVersion = localStorage.getItem('mock_users_version');
-    
-    if (!localStorage.getItem(this.mockDataKey) || storedVersion !== MOCK_DATA_VERSION) {
-      localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
-      localStorage.setItem('mock_users_version', MOCK_DATA_VERSION);
-    }
-  }
-
-  /**
-   * Reset mock data về dữ liệu mặc định từ mock-data.ts
-   */
-  resetMockData(): void {
-    localStorage.setItem(this.mockDataKey, JSON.stringify(MOCK_USERS));
-    localStorage.setItem('mock_users_version', '1.1');
-  }
-
-  private getMockUsers(): User[] {
-    const data = localStorage.getItem(this.mockDataKey);
-    return data ? JSON.parse(data) : [];
-  }
-
-  private saveMockUsers(users: User[]): void {
-    localStorage.setItem(this.mockDataKey, JSON.stringify(users));
-  }
-
+  // Lấy danh sách users
   getUsers(scope?: string, schoolId?: number): Observable<User[]> {
-    if (USE_MOCK_DATA) {
-      let users = this.getMockUsers();
-      
-      if (scope) {
-        users = users.filter(u => u.scope === scope);
-      }
-      
-      if (schoolId !== undefined) {
-        users = users.filter(u => u.schoolId === schoolId);
-      }
-      
-      return of(users).pipe(delay(300));
-    }
+    console.log('[API Request] GET /users');
+    return this.http.get<ApiResponse<User[]>>(this.apiUrl, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log('[API Response] GET /users:', response)),
+        map(response => response.data)
+      );
+  }
 
+  // Tìm kiếm users
+  searchUsers(keyword?: string, schoolId?: number): Observable<User[]> {
     let params = new HttpParams();
-    if (scope) {
-      params = params.set('scope', scope);
+    if (keyword) {
+      params = params.set('keyword', keyword);
     }
-    if (schoolId !== undefined) {
-      params = params.set('schoolId', schoolId.toString());
-    }
-    return this.http.get<User[]>(`${this.apiUrl}/users`, { params });
+    console.log('[API Request] GET /users/search keyword:', keyword);
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/search`, {
+      headers: this.getHeaders(),
+      params: params
+    }).pipe(
+      tap(response => console.log('[API Response] Search:', response)),
+      map(response => response.data)
+    );
   }
 
+  // Lấy user theo ID
   getUserById(id: number): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const user = users.find(u => u.id === id);
-      if (user) {
-        return of(user).pipe(delay(300));
-      }
-      return new Observable(observer => {
-        setTimeout(() => observer.error({ error: { message: 'Không tìm thấy người dùng' } }), 300);
-      });
-    }
-    return this.http.get<User>(`${this.apiUrl}/users/${id}`);
+    console.log(`[API Request] GET /users/${id}`);
+    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] GET /users/${id}:`, response)),
+        map(response => response.data)
+      );
   }
 
+  // Tạo user mới
   createUser(user: User): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const newId = Math.max(...users.map(u => u.id || 0), 0) + 1;
-      const newUser: User = {
-        ...user,
-        id: newId,
-        roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      users.push(newUser);
-      this.saveMockUsers(users);
-      return of(newUser).pipe(delay(500));
-    }
-    return this.http.post<User>(`${this.apiUrl}/users`, user);
+    // Convert User to backend format (remove id, createdAt, updatedAt, createBy, updateBy)
+    const { id, createdAt, updatedAt, createBy, updateBy, ...userRequest } = user;
+
+    // Convert birthYear từ "yyyy-MM-dd" sang "yyyy-MM-ddTHH:mm:ss" format cho LocalDateTime
+    const requestBody = {
+      ...userRequest,
+      birthYear: userRequest.birthYear && userRequest.birthYear.length === 10
+        ? userRequest.birthYear + 'T00:00:00'
+        : userRequest.birthYear
+    };
+
+    console.log('[API Request] POST /users Payload:', requestBody);
+    return this.http.post<ApiResponse<User>>(this.apiUrl, requestBody, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log('[API Response] POST /users:', response)),
+        map(response => response.data)
+      );
   }
 
+  // Cập nhật user
   updateUser(id: number, user: User): Observable<User> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const index = users.findIndex(u => u.id === id);
-      if (index !== -1) {
-        users[index] = {
-          ...user,
-          id,
-          roleId: user.roleId != null ? Number(user.roleId) : user.roleId, // Đảm bảo roleId là number
-          updatedAt: new Date().toISOString()
-        };
-        this.saveMockUsers(users);
-        return of(users[index]).pipe(delay(500));
-      }
-      return new Observable(observer => {
-        setTimeout(() => observer.error({ error: { message: 'Không tìm thấy người dùng' } }), 300);
-      });
-    }
-    return this.http.put<User>(`${this.apiUrl}/users/${id}`, user);
+    // Convert User to backend format (remove id, createdAt, updatedAt, createBy)
+    const { id: userId, createdAt, updatedAt, createBy, ...userRequest } = user;
+
+    // Convert birthYear từ "yyyy-MM-dd" sang "yyyy-MM-ddTHH:mm:ss" format cho LocalDateTime
+    const requestBody = {
+      ...userRequest,
+      birthYear: userRequest.birthYear && userRequest.birthYear.length === 10
+        ? userRequest.birthYear + 'T00:00:00'
+        : userRequest.birthYear
+    };
+
+    console.log(`[API Request] PUT /users/${id} Payload:`, requestBody);
+    return this.http.put<ApiResponse<User>>(`${this.apiUrl}/${id}`, requestBody, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] PUT /users/${id}:`, response)),
+        map(response => response.data)
+      );
   }
 
+  // Xóa user
   deleteUser(id: number): Observable<void> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      const filtered = users.filter(u => u.id !== id);
-      this.saveMockUsers(filtered);
-      return of(void 0).pipe(delay(500));
-    }
-    return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
+    console.log(`[API Request] DELETE /users/${id}`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] DELETE /users/${id}:`, response)),
+        map(() => void 0)
+      );
   }
 
-  /**
-   * Kiểm tra xem role có đang được sử dụng bởi user nào không
-   */
+  // Kiểm tra xem role có đang được sử dụng bởi user nào không
   isRoleInUse(roleId: number): Observable<boolean> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const isInUse = users.some(u => u.roleId != null && Number(u.roleId) === Number(roleId));
-      return of(isInUse).pipe(delay(100));
-    }
-    return this.http.get<boolean>(`${this.apiUrl}/users/check-role/${roleId}`);
+    console.log(`[API Request] GET /users/role-in-use/${roleId}`);
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/role-in-use/${roleId}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] Role in use:`, response)),
+        map(response => response.data)
+      );
   }
 
-  /**
-   * Lấy số lượng user đang sử dụng role
-   */
+  // Lấy danh sách user đang sử dụng role
   getUsersByRoleId(roleId: number): Observable<User[]> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const usersWithRole = users.filter(u => u.roleId != null && Number(u.roleId) === Number(roleId));
-      return of(usersWithRole).pipe(delay(100));
-    }
-    return this.http.get<User[]>(`${this.apiUrl}/users?roleId=${roleId}`);
+    console.log(`[API Request] GET /users/by-role/${roleId}`);
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/by-role/${roleId}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] Users by role:`, response)),
+        map(response => response.data)
+      );
   }
 
-  /**
-   * Gán role mới cho tất cả users đang sử dụng role cũ
-   */
+  // Gán role mới cho tất cả users đang sử dụng role cũ
   reassignRole(oldRoleId: number, newRoleId: number): Observable<{ success: boolean; message?: string; updatedCount?: number }> {
-    if (USE_MOCK_DATA) {
-      const users = this.getMockUsers();
-      // Đảm bảo so sánh đúng kiểu dữ liệu (number)
-      const usersToUpdate = users.filter(u => u.roleId != null && Number(u.roleId) === Number(oldRoleId));
-      
-      if (usersToUpdate.length === 0) {
-        return of({ success: false, message: 'Không tìm thấy user nào đang sử dụng role này.' });
-      }
+    const params = new HttpParams()
+      .set('oldRoleId', oldRoleId.toString())
+      .set('newRoleId', newRoleId.toString());
 
-      // Cập nhật roleId cho tất cả users
-      usersToUpdate.forEach(user => {
-        const index = users.findIndex(u => u.id === user.id);
-        if (index !== -1) {
-          users[index] = {
-            ...users[index],
-            roleId: Number(newRoleId), // Đảm bảo roleId là number
-            updatedAt: new Date().toISOString()
-          };
-        }
-      });
-
-      this.saveMockUsers(users);
-      return of({ 
-        success: true, 
-        updatedCount: usersToUpdate.length,
-        message: `Đã gán role mới cho ${usersToUpdate.length} người dùng.`
-      }).pipe(delay(500));
-    }
-    return this.http.put<{ success: boolean; message?: string; updatedCount?: number }>(
-      `${this.apiUrl}/users/reassign-role`,
-      { oldRoleId, newRoleId }
+    console.log(`[API Request] PUT /users/reassign-role?oldRoleId=${oldRoleId}&newRoleId=${newRoleId}`);
+    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/reassign-role`, null, { 
+      headers: this.getHeaders(), 
+      params 
+    }).pipe(
+      tap(response => console.log('[API Response] Reassign role:', response)),
+      map(response => {
+        const updatedCount = response.data ? parseInt(response.data, 10) : 0;
+        return {
+          success: true,
+          message: response.message || `Đã gán role mới cho ${updatedCount} người dùng`,
+          updatedCount: updatedCount
+        };
+      })
     );
   }
 }
-

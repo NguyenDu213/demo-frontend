@@ -5,8 +5,8 @@ export enum Gender {
 }
 
 export enum Scope {
-  SCHOOL = 'School',
-  PROVIDER = 'Provider'
+  SCHOOL = 'SCHOOL',
+  PROVIDER = 'PROVIDER'
 }
 
 export interface User {

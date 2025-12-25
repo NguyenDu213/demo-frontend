@@ -12,7 +12,7 @@ import {PageResponse} from '../models/page-response.model';
 export class SchoolService {
   private apiUrl = 'http://localhost:8080/api/schools';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // Hàm lấy Header có chứa Token
   private getHeaders(): HttpHeaders {

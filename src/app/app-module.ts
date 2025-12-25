@@ -2,10 +2,11 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { registerLocaleData } from '@angular/common';
 import en from '@angular/common/locales/en';
+import { httpInterceptor } from './interceptors/auth.interceptor';
 
 import { App } from './app';
 import { AppRoutingModule } from './app-routing-module';
@@ -51,7 +52,7 @@ registerLocaleData(en);
     AppRoutingModule
   ],
   providers: [
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([httpInterceptor])),
     provideAnimationsAsync()
   ],
   bootstrap: [App]
