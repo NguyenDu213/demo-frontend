@@ -44,17 +44,17 @@ export class ProviderUsersComponent implements OnInit {
     this.loadUsers();
     this.loadRoles();
     this.loadAllRoles(); // Load tất cả roles để hiển thị role name
-    this.loadSchools();
+    // this.loadSchools();
   }
 
-  loadSchools(): void {
-    this.schoolService.getAllSchools().subscribe({
-      next: (data) => {
-        this.schools = data;
-        this.cdr.detectChanges();
-      }
-    });
-  }
+  // loadSchools(): void {
+  //   this.schoolService.getAllSchools().subscribe({
+  //     next: (data) => {
+  //       this.schools = data;
+  //       this.cdr.detectChanges();
+  //     }
+  //   });
+  // }
 
   getSchoolName(schoolId: number | null | undefined): string {
     if (!schoolId) return 'N/A';
@@ -85,19 +85,19 @@ export class ProviderUsersComponent implements OnInit {
             this.roleService.getRoles('SCHOOL').subscribe({
               next: (schoolRoles) => {
                 const allRoles = [...providerRoles, ...schoolRoles];
-                
+
                 // Filter users dựa trên roleName thay vì roleId
                 this.users = data.filter(user => {
                   const userRole = allRoles.find(r => r.id === user.roleId);
                   if (!userRole) return false;
-                  
+
                   // Chỉ hiển thị:
                   // 1. Tài khoản hệ thống (scope = Provider, không phải SYSTEM_ADMIN)
                   // 2. Tài khoản admin school (SCHOOL_ADMIN)
-                  return (user.scope === 'Provider' && userRole.roleName !== 'SYSTEM_ADMIN') 
+                  return (user.scope === 'Provider' && userRole.roleName !== 'SYSTEM_ADMIN')
                       || userRole.roleName === 'SCHOOL_ADMIN';
                 });
-                
+
                 this.isLoading = false;
                 this.cdr.detectChanges();
               }
@@ -212,7 +212,7 @@ export class ProviderUsersComponent implements OnInit {
     if (this.isEditMode && this.selectedUser.id) {
       // Update updateBy với current user ID
       this.selectedUser.updateBy = currentUserId;
-      
+
       // Kiểm tra xem user có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
       const userRole = this.allRoles.find(r => r.id === this.selectedUser.roleId);
       const isSystemAdmin = userRole?.roleName === 'SYSTEM_ADMIN';
@@ -253,7 +253,7 @@ export class ProviderUsersComponent implements OnInit {
       // Set createBy và updateBy khi tạo mới
       this.selectedUser.createBy = currentUserId;
       this.selectedUser.updateBy = currentUserId;
-      
+
       this.userService.createUser(this.selectedUser).subscribe({
         next: () => {
           this.isSaving = false;

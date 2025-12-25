@@ -16,9 +16,12 @@ export class ProviderSchoolsComponent implements OnInit {
   selectedSchool: School = this.getEmptySchool();
   searchTerm: string = '';
   isSaving: boolean = false;
-
-  // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
   fieldErrors: { [key: string]: string } = {};
+
+  currentPage: number = 0;
+  pageSize: number = 3;
+  totalElements: number = 0;
+  totalPages: number = 0;
 
   constructor(
     private schoolService: SchoolService,
@@ -42,21 +45,75 @@ export class ProviderSchoolsComponent implements OnInit {
 
   loadSchools(): void {
     this.isLoading = true;
-    this.schoolService.getAllSchools().subscribe({
+
+    this.schoolService.getAllSchools(this.currentPage, this.pageSize).subscribe({
       next: (data) => {
-        this.schools = data;
+        this.schools = data.data;
+        this.totalElements = data.totalElements;
+        this.totalPages = data.totalPages;
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Lỗi tải danh sách:', err);
         this.isLoading = false;
-        if (err.status === 403) {
-          alert('Bạn không có quyền truy cập chức năng này (Yêu cầu SYSTEM_ADMIN).');
-        }
+        if (err.status === 403) alert('Bạn không có quyền truy cập.');
         this.cdr.detectChanges();
       }
     });
+  }
+
+  onSearch(): void {
+    this.currentPage = 0;
+
+    if (!this.searchTerm || this.searchTerm.trim() === '') {
+      this.loadSchools();
+      return;
+    }
+
+    this.isLoading = true;
+    this.schoolService.searchSchools(this.searchTerm.trim(), this.currentPage, this.pageSize).subscribe({
+      next: (data) => {
+        this.schools = data.data;
+        this.totalElements = data.totalElements;
+        this.totalPages = data.totalPages;
+
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Lỗi tìm kiếm:', err);
+        this.isLoading = false;
+        this.schools = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  changePage(newPage: number): void {
+    if (newPage >= 0 && newPage < this.totalPages) {
+      this.currentPage = newPage;
+      if (this.searchTerm.trim()) {
+        this.onSearch();
+      } else {
+        this.loadSchools();
+      }
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      this.onSearch();
+    } else {
+      this.loadSchools();
+    }
+  }
+
+  get pagesArray(): number[] {
+    return Array(this.totalPages).fill(0).map((x, i) => i);
   }
 
   openAddModal(): void {
@@ -140,27 +197,5 @@ export class ProviderSchoolsComponent implements OnInit {
         }
       });
     }
-  }
-
-  onSearch(): void {
-    if (!this.searchTerm || this.searchTerm.trim() === '') {
-      this.loadSchools();
-      return;
-    }
-
-    this.isLoading = true;
-    this.schoolService.searchSchools(this.searchTerm.trim()).subscribe({
-      next: (data) => {
-        this.schools = data;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Lỗi tìm kiếm:', err);
-        this.isLoading = false;
-        this.schools = [];
-        this.cdr.detectChanges();
-      }
-    });
   }
 }
