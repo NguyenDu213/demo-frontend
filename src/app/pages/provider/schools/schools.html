@@ -141,107 +141,139 @@
       </div>
     </div>
 
-  <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm" (click)="closeModal()">
-    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
+    <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm" (click)="closeModal()">
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
 
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">
-          {{ isEditMode ? 'Chỉnh sửa trường học' : 'Thêm trường học mới' }}
-        </h2>
-        <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">
+            {{ isEditMode ? 'Chỉnh sửa trường học' : 'Thêm trường học mới' }}
+          </h2>
+          <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        <form (ngSubmit)="saveSchool()" #schoolForm="ngForm" class="space-y-4">
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Mã trường <span class="text-red-500">*</span></label>
+              <input type="text"
+                     [(ngModel)]="selectedSchool.code"
+                     name="code"
+                     required minlength="3" maxlength="20"
+                     #codeModel="ngModel"
+                     (input)="clearError('code')"
+                     class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                     [class.border-red-500]="(codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code']"
+                     [class.focus:ring-red-200]="(codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code']"
+                     [class.border-gray-300]="!((codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code'])"
+                     [class.focus:ring-blue-500]="!((codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code'])" />
+
+              <app-error-message [control]="codeModel" label="Mã trường" [backendError]="fieldErrors['code']"></app-error-message>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tên trường <span class="text-red-500">*</span></label>
+              <input type="text"
+                     [(ngModel)]="selectedSchool.name"
+                     name="name"
+                     required minlength="5" maxlength="100"
+                     #nameModel="ngModel"
+                     (input)="clearError('name')"
+                     class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                     [class.border-red-500]="(nameModel.invalid && (nameModel.dirty || nameModel.touched)) || fieldErrors['name']"
+                     [class.focus:ring-red-200]="(nameModel.invalid && (nameModel.dirty || nameModel.touched)) || fieldErrors['name']"
+                     [class.border-gray-300]="!((nameModel.invalid && (nameModel.dirty || nameModel.touched)) || fieldErrors['name'])"
+                     [class.focus:ring-blue-500]="!((nameModel.invalid && (nameModel.dirty || nameModel.touched)) || fieldErrors['name'])" />
+
+              <app-error-message [control]="nameModel" label="Tên trường" [backendError]="fieldErrors['name']"></app-error-message>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+            <input type="email"
+                   [(ngModel)]="selectedSchool.email"
+                   name="email"
+                   required email maxlength="50"
+                   #emailModel="ngModel"
+                   (input)="clearError('email')"
+                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                   [class.border-red-500]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+                   [class.focus:ring-red-200]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+                   [class.border-gray-300]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])"
+                   [class.focus:ring-blue-500]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])" />
+
+            <app-error-message [control]="emailModel" label="Email" [backendError]="fieldErrors['email']"></app-error-message>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Hotline <span class="text-red-500">*</span></label>
+            <input type="text"
+                   [(ngModel)]="selectedSchool.hotline"
+                   name="hotline"
+                   required pattern="^(0|\+84)[0-9]{9,10}$" minlength="10" maxlength="11"
+                   #hotlineModel="ngModel"
+                   (input)="clearError('hotline')"
+                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                   [class.border-red-500]="(hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched)) || fieldErrors['hotline']"
+                   [class.focus:ring-red-200]="(hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched)) || fieldErrors['hotline']"
+                   [class.border-gray-300]="!((hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched)) || fieldErrors['hotline'])"
+                   [class.focus:ring-blue-500]="!((hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched)) || fieldErrors['hotline'])" />
+
+            <app-error-message [control]="hotlineModel" label="Hotline" [backendError]="fieldErrors['hotline']"></app-error-message>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ <span class="text-red-500">*</span></label>
+            <input type="text"
+                   [(ngModel)]="selectedSchool.address"
+                   name="address"
+                   required minlength="5" maxlength="200"
+                   #addressModel="ngModel"
+                   (input)="clearError('address')"
+                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                   [class.border-red-500]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+                   [class.focus:ring-red-200]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+                   [class.border-gray-300]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])"
+                   [class.focus:ring-blue-500]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])" />
+
+            <app-error-message [control]="addressModel" label="Địa chỉ" [backendError]="fieldErrors['address']"></app-error-message>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tên hiệu trưởng <span class="text-red-500">*</span></label>
+            <input type="text"
+                   [(ngModel)]="selectedSchool.principalName"
+                   name="principalName"
+                   required minlength="2" maxlength="50"
+                   #principalModel="ngModel"
+                   (input)="clearError('principalName')"
+                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                   [class.border-red-500]="(principalModel.invalid && (principalModel.dirty || principalModel.touched)) || fieldErrors['principalName']"
+                   [class.focus:ring-red-200]="(principalModel.invalid && (principalModel.dirty || principalModel.touched)) || fieldErrors['principalName']"
+                   [class.border-gray-300]="!((principalModel.invalid && (principalModel.dirty || principalModel.touched)) || fieldErrors['principalName'])"
+                   [class.focus:ring-blue-500]="!((principalModel.invalid && (principalModel.dirty || principalModel.touched)) || fieldErrors['principalName'])" />
+
+            <app-error-message [control]="principalModel" label="Tên hiệu trưởng" [backendError]="fieldErrors['principalName']"></app-error-message>
+          </div>
+
+          <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100 mt-6">
+            <button type="button" (click)="closeModal()"
+                    class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700">
+              Hủy
+            </button>
+
+            <button type="submit"
+                    [disabled]="schoolForm.invalid || isSaving"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg *ngIf="isSaving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isSaving ? 'Đang lưu...' : 'Lưu thông tin' }}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form (ngSubmit)="saveSchool()" class="space-y-4">
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Mã trường <span class="text-red-500">*</span></label>
-            <input type="text" [(ngModel)]="selectedSchool.code" name="code"
-                   (input)="clearError('code')"
-                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                   [class.border-red-500]="fieldErrors['code']"
-                   [class.focus:ring-red-200]="fieldErrors['code']"
-                   [class.border-gray-300]="!fieldErrors['code']"
-                   [class.focus:ring-blue-500]="!fieldErrors['code']" />
-            <p *ngIf="fieldErrors['code']" class="text-red-500 text-xs mt-1">{{ fieldErrors['code'] }}</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Tên trường <span class="text-red-500">*</span></label>
-            <input type="text" [(ngModel)]="selectedSchool.name" name="name"
-                   (input)="clearError('name')"
-                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                   [class.border-red-500]="fieldErrors['name']"
-                   [class.focus:ring-red-200]="fieldErrors['name']"
-                   [class.border-gray-300]="!fieldErrors['name']"
-                   [class.focus:ring-blue-500]="!fieldErrors['name']" />
-            <p *ngIf="fieldErrors['name']" class="text-red-500 text-xs mt-1">{{ fieldErrors['name'] }}</p>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
-          <input type="email" [(ngModel)]="selectedSchool.email" name="email"
-                 (input)="clearError('email')"
-                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                 [class.border-red-500]="fieldErrors['email']"
-                 [class.focus:ring-red-200]="fieldErrors['email']"
-                 [class.border-gray-300]="!fieldErrors['email']"
-                 [class.focus:ring-blue-500]="!fieldErrors['email']" />
-          <p *ngIf="fieldErrors['email']" class="text-red-500 text-xs mt-1">{{ fieldErrors['email'] }}</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Hotline <span class="text-red-500">*</span></label>
-          <input type="text" [(ngModel)]="selectedSchool.hotline" name="hotline"
-                 (input)="clearError('hotline')"
-                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                 [class.border-red-500]="fieldErrors['hotline']"
-                 [class.focus:ring-red-200]="fieldErrors['hotline']"
-                 [class.border-gray-300]="!fieldErrors['hotline']"
-                 [class.focus:ring-blue-500]="!fieldErrors['hotline']" />
-          <p *ngIf="fieldErrors['hotline']" class="text-red-500 text-xs mt-1">{{ fieldErrors['hotline'] }}</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ <span class="text-red-500">*</span></label>
-          <input type="text" [(ngModel)]="selectedSchool.address" name="address"
-                 (input)="clearError('address')"
-                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                 [class.border-red-500]="fieldErrors['address']"
-                 [class.focus:ring-red-200]="fieldErrors['address']"
-                 [class.border-gray-300]="!fieldErrors['address']"
-                 [class.focus:ring-blue-500]="!fieldErrors['address']" />
-          <p *ngIf="fieldErrors['address']" class="text-red-500 text-xs mt-1">{{ fieldErrors['address'] }}</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Tên hiệu trưởng <span class="text-red-500">*</span></label>
-          <input type="text" [(ngModel)]="selectedSchool.principalName" name="principalName"
-                 (input)="clearError('principalName')"
-                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                 [class.border-red-500]="fieldErrors['principalName']"
-                 [class.focus:ring-red-200]="fieldErrors['principalName']"
-                 [class.border-gray-300]="!fieldErrors['principalName']"
-                 [class.focus:ring-blue-500]="!fieldErrors['principalName']" />
-          <p *ngIf="fieldErrors['principalName']" class="text-red-500 text-xs mt-1">{{ fieldErrors['principalName'] }}</p>
-        </div>
-
-        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100 mt-6">
-          <button type="button" (click)="closeModal()"
-                  class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700">
-            Hủy
-          </button>
-          <button type="submit" [disabled]="isSaving"
-                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center disabled:opacity-50">
-            <svg *ngIf="isSaving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {{ isSaving ? 'Đang lưu...' : 'Lưu thông tin' }}
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
