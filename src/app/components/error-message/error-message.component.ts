@@ -19,14 +19,15 @@ export class ErrorMessageComponent {
     if (this.control && this.control.invalid && (this.control.dirty || this.control.touched)) {
       return true;
     }
-    if (this.backendError && (!this.control?.dirty || this.control?.pristine)) {
+    if (this.backendError) {
       return true;
     }
     return false;
   }
 
   getErrorMessage(): string {
-    if (this.backendError && (!this.control?.dirty || this.control?.pristine)) {
+    if (this.backendError) {
+      console.log(this.backendError);
       return this.backendError;
     }
 
