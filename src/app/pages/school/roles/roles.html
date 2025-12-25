@@ -5,10 +5,8 @@
       <h1 class="text-3xl font-bold text-gray-800 mb-2">Quản lý Role trường</h1>
       <p class="text-gray-600">Quản lý các quyền trong trường học</p>
     </div>
-    <button
-      (click)="openAddModal()"
-      class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-    >
+    <button (click)="openAddModal()"
+      class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
       + Thêm Role
     </button>
   </div>
@@ -17,25 +15,22 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
-        <input
-          type="text"
-          [(ngModel)]="searchTerm"
-          placeholder="Tìm kiếm theo tên"
-          (keyup.enter)="onSearchChange()"
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên" (keyup.enter)="onSearchChange()"
           (input)="onSearchChange()"
-          class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-        />
+          class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
         <button type="button" (click)="onSearchChange()"
           class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </button>
       </div>
       <button type="button" (click)="onSearchChange()"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
         Tìm kiếm
       </button>
@@ -61,16 +56,12 @@
             <td class="px-6 py-4 text-sm text-gray-600">{{ role.description }}</td>
             <td class="px-6 py-4 text-sm">
               <div class="flex items-center space-x-2">
-                <button
-                  (click)="openEditModal(role)"
-                  class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                >
+                <button (click)="openEditModal(role)"
+                  class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
                   Sửa
                 </button>
-                <button
-                  (click)="deleteRole(role.id!)"
-                  class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                >
+                <button (click)="deleteRole(role.id!)"
+                  class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
                   Xóa
                 </button>
               </div>
@@ -85,15 +76,9 @@
   </div>
 
   <!-- Modal -->
-  <div
-    *ngIf="isModalOpen"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    (click)="closeModal()"
-  >
-    <div
-      class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4"
-      (click)="$event.stopPropagation()"
-    >
+  <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    (click)="closeModal()">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">
         {{ isEditMode ? 'Chỉnh sửa Role' : 'Thêm Role mới' }}
       </h2>
@@ -101,51 +86,32 @@
       <form (ngSubmit)="saveRole()" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Tên Role *</label>
-          <input
-            type="text"
-            [(ngModel)]="selectedRole.roleName"
-            name="roleName"
-            required
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          />
-          <p class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Giáo viên" → "GIAO_VIEN"</p>
+          <input type="text" [(ngModel)]="selectedRole.roleName" name="roleName" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+          <p class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng
+            trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Giáo viên" → "GIAO_VIEN"</p>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Loại Role</label>
-          <input
-            type="text"
-            [value]="'SCHOOL'"
-            disabled
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-          />
+          <input type="text" [value]="'SCHOOL'" disabled
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed" />
           <p class="mt-1 text-xs text-gray-500">Role trong trường học luôn có loại là SCHOOL</p>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Mô tả *</label>
-          <textarea
-            [(ngModel)]="selectedRole.description"
-            name="description"
-            required
-            rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          ></textarea>
+          <textarea [(ngModel)]="selectedRole.description" name="description" required rows="4"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"></textarea>
         </div>
 
         <div class="flex justify-end space-x-4 pt-4">
-          <button
-            type="button"
-            (click)="closeModal()"
-            class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
+          <button type="button" (click)="closeModal()"
+            class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Hủy
           </button>
-          <button
-            type="submit"
-            [disabled]="isSaving"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" [disabled]="isSaving"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span *ngIf="!isSaving">Lưu</span>
             <span *ngIf="isSaving">Đang lưu...</span>
           </button>
@@ -157,30 +123,26 @@
   <!-- Modal Gán Role Mới -->
   <div *ngIf="isReassignModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     (click)="closeReassignModal()">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto"
+      (click)="$event.stopPropagation()">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">Gán Role Mới</h2>
-      
+
       <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p class="text-sm text-yellow-800">
-          <strong>Không thể xóa role "{{ roleToDelete?.roleName }}"</strong> vì đang có <strong>{{ usersWithRole.length }}</strong> người dùng sử dụng.
+          <strong>Không thể xóa role "{{ roleToDelete?.roleName }}"</strong> vì đang có
+          <strong>{{ roleToDelete?.userCount || 0 }}</strong> người dùng sử dụng.
         </p>
         <p class="text-sm text-yellow-800 mt-2">
           Vui lòng chọn role mới để gán cho các người dùng này trước khi xóa role cũ.
         </p>
       </div>
 
-      <!-- Danh sách người dùng đang sử dụng role -->
+      <!-- Thông báo -->
       <div class="mb-6">
-        <h3 class="text-lg font-semibold text-gray-700 mb-3">Người dùng đang sử dụng role này:</h3>
-        <div class="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
-          <ul class="space-y-2">
-            <li *ngFor="let user of usersWithRole" class="text-sm text-gray-700">
-              • {{ user.fullName }} ({{ user.email }})
-            </li>
-            <li *ngIf="usersWithRole.length === 0" class="text-sm text-gray-500">
-              Không có người dùng nào
-            </li>
-          </ul>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="text-sm text-gray-700">
+            Hệ thống sẽ tự động gán role mới cho tất cả người dùng đang sử dụng role này trước khi xóa.
+          </p>
         </div>
       </div>
 
@@ -189,13 +151,11 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">
           Chọn role mới để gán cho các người dùng *
         </label>
-        <select 
-          [(ngModel)]="selectedNewRoleId" 
-          name="newRoleId"
+        <select [(ngModel)]="selectedNewRoleId" name="newRoleId"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           [disabled]="isReassigning || alternativeRoles.length === 0">
-          <option [value]="null">-- Chọn role mới --</option>
-          <option *ngFor="let role of alternativeRoles" [value]="role.id">
+          <option [ngValue]="null">-- Chọn role mới --</option>
+          <option *ngFor="let role of alternativeRoles" [ngValue]="role.id">
             {{ role.roleName }} - {{ role.description }}
           </option>
         </select>
@@ -220,16 +180,11 @@
       </div>
 
       <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-        <button 
-          type="button" 
-          (click)="closeReassignModal()"
-          [disabled]="isReassigning"
+        <button type="button" (click)="closeReassignModal()" [disabled]="isReassigning"
           class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           Hủy
         </button>
-        <button 
-          type="button"
-          (click)="reassignAndDelete()"
+        <button type="button" (click)="reassignAndDelete()"
           [disabled]="!selectedNewRoleId || isReassigning || alternativeRoles.length === 0"
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           <span *ngIf="!isReassigning">Gán Role Mới và Xóa Role Cũ</span>
@@ -239,4 +194,3 @@
     </div>
   </div>
 </div>
-

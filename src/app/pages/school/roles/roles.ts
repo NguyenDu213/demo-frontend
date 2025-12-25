@@ -37,12 +37,12 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadRoles();
-    
+
     // Setup debounce cho search
     this.searchSubject.pipe(
       debounceTime(500),
@@ -59,12 +59,12 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
   loadRoles(): void {
     this.isLoading = true;
     const schoolId = this.currentUser?.schoolId ?? undefined;
-    
+
     // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
     const searchObservable = this.searchTerm.trim()
-      ? this.roleService.searchRoles(this.searchTerm, 'SCHOOL', schoolId)
+      ? this.roleService.searchRoles(this.searchTerm, schoolId, 'SCHOOL')
       : this.roleService.getRoles('SCHOOL', schoolId);
-    
+
     searchObservable.subscribe({
       next: (data) => {
         // Filter bỏ role "SCHOOL_ADMIN" - không hiển thị trong danh sách
@@ -98,7 +98,7 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
 
   openEditModal(role: Role): void {
     this.isEditMode = true;
-    this.selectedRole = { 
+    this.selectedRole = {
       ...role,
       typeRole: TypeRole.SCHOOL, // Đảm bảo typeRole luôn là SCHOOL
       schoolId: this.currentUser?.schoolId || null // Đảm bảo schoolId đúng
@@ -120,7 +120,7 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
 
     // Chuẩn hóa tên role trước khi lưu
     const normalizedName = this.normalizeRoleName(this.selectedRole.roleName);
-    
+
     if (!normalizedName || normalizedName.length === 0) {
       alert('Tên role không hợp lệ. Vui lòng nhập tên role.');
       return;
@@ -133,19 +133,19 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
 
     // Cập nhật tên role đã chuẩn hóa
     this.selectedRole.roleName = normalizedName;
-    
+
     // Đảm bảo typeRole luôn là SCHOOL cho school admin
     this.selectedRole.typeRole = TypeRole.SCHOOL;
     // Đảm bảo schoolId được set từ current user
     this.selectedRole.schoolId = this.currentUser?.schoolId || null;
-    
+
     const currentUserId = this.currentUser?.id || 1;
     this.isSaving = true;
 
     if (this.isEditMode && this.selectedRole.id) {
       // Update updateBy với current user ID
       this.selectedRole.updateBy = currentUserId;
-      
+
       this.roleService.updateRole(this.selectedRole.id, this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
@@ -160,7 +160,7 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       // Set createBy và updateBy khi tạo mới
       this.selectedRole.createBy = currentUserId;
       this.selectedRole.updateBy = currentUserId;
-      
+
       this.roleService.createRole(this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
@@ -184,21 +184,21 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/đ/g, 'd')
       .replace(/Đ/g, 'D');
-    
+
     // Chuyển thành chữ hoa và thay khoảng trắng bằng dấu gạch dưới
     let normalized = withoutAccents
       .toUpperCase()
       .replace(/\s+/g, '_');
-    
+
     // Loại bỏ các ký tự đặc biệt trừ dấu gạch dưới và chữ cái, số
     normalized = normalized.replace(/[^A-Z0-9_]/g, '');
-    
+
     // Loại bỏ nhiều dấu gạch dưới liên tiếp
     normalized = normalized.replace(/_+/g, '_');
-    
+
     // Loại bỏ dấu gạch dưới ở đầu và cuối
     normalized = normalized.replace(/^_+|_+$/g, '');
-    
+
     return normalized;
   }
 
@@ -217,60 +217,79 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     const role = this.roles.find(r => r.id === id);
     if (!role) return;
 
-    // Mở modal ngay lập tức và load dữ liệu sau để tránh phải click 2 lần
-    this.openReassignModal(role);
+    // Xóa trực tiếp, backend sẽ trả về lỗi nếu role đang được sử dụng
+    if (confirm(`Bạn có chắc chắn muốn xóa role "${role.roleName}"?`)) {
+      this.roleService.deleteRole(id).subscribe({
+        next: (result) => {
+          if (result.success) {
+            this.loadRoles();
+            alert('Xóa role thành công!');
+          } else {
+            // Nếu có lỗi, kiểm tra xem có phải do role đang được sử dụng không
+            const message = result.message || '';
+            const statusCode = (result as any).statusCode;
 
-    // Kiểm tra xem role có đang được sử dụng không
-    this.userService.isRoleInUse(id).subscribe({
-      next: (isInUse) => {
-        if (!isInUse) {
-          // Nếu không có user sử dụng, đóng modal và xóa trực tiếp
-          this.closeReassignModal();
-          this.roleService.deleteRole(id).subscribe({
-            next: (result) => {
-              if (result.success) {
-                this.loadRoles();
-              } else {
-                alert(result.message || 'Không thể xóa role này.');
-              }
-            },
-            error: (error) => {
-              alert('Có lỗi xảy ra khi xóa role: ' + (error.message || 'Lỗi không xác định'));
+            // Kiểm tra HTTP status code 409 (Conflict) hoặc message chứa "người dùng sử dụng"
+            if (statusCode === 409 || message.includes('người dùng sử dụng') || message.includes('Conflict')) {
+              // Mở modal reassign
+              this.openReassignModal(role);
+            } else {
+              alert(result.message || 'Không thể xóa role này.');
             }
-          });
+          }
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi không xác định';
+          const statusCode = error.status;
+
+          // Kiểm tra HTTP status code 409 (Conflict) hoặc message chứa "người dùng sử dụng"
+          if (statusCode === 409 || errorMessage.includes('người dùng sử dụng') || errorMessage.includes('Conflict')) {
+            // Mở modal reassign
+            this.openReassignModal(role);
+          } else {
+            alert('Có lỗi xảy ra khi xóa role: ' + errorMessage);
+          }
         }
-        // Nếu có user sử dụng, modal đã được mở và dữ liệu đang được load
-      },
-      error: () => {
-        this.closeReassignModal();
-        alert('Có lỗi xảy ra khi kiểm tra role.');
-      }
-    });
+      });
+    }
   }
 
   openReassignModal(role: Role): void {
     this.roleToDelete = role;
     this.selectedNewRoleId = null;
     this.isReassignModalOpen = true;
+    this.alternativeRoles = [];
     this.cdr.detectChanges(); // Đảm bảo modal hiển thị ngay lập tức
 
-    // Load danh sách users đang sử dụng role này
-    this.userService.getUsersByRoleId(role.id!).subscribe({
-      next: (users) => {
-        this.usersWithRole = users;
-        this.cdr.detectChanges();
-      }
-    });
+    // Load lại role để có userCount mới nhất
+    if (role.id) {
+      this.roleService.getRoleById(role.id).subscribe({
+        next: (updatedRole) => {
+          this.roleToDelete = updatedRole;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading role details:', error);
+        }
+      });
+    }
 
     // Load danh sách role khác cùng typeRole (trừ role đang xóa)
     const schoolId = this.currentUser?.schoolId ?? undefined;
     this.roleService.getRoles(role.typeRole, schoolId).subscribe({
       next: (roles) => {
-        this.alternativeRoles = roles.filter(r => 
-          r.id !== role.id && 
+        this.alternativeRoles = roles.filter(r =>
+          r.id !== role.id &&
           r.roleName !== 'SCHOOL_ADMIN' &&
           (r.schoolId === schoolId || r.schoolId === null)
         );
+        console.log('Alternative roles loaded:', this.alternativeRoles);
+        console.log('Role to delete:', this.roleToDelete);
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading alternative roles:', error);
+        this.alternativeRoles = [];
         this.cdr.detectChanges();
       }
     });
@@ -296,38 +315,22 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     }
 
     this.isReassigning = true;
-    this.userService.reassignRole(this.roleToDelete.id!, this.selectedNewRoleId).subscribe({
+    // Gọi API reassign và delete trong một lần
+    this.roleService.reassignRoleAndDelete(this.roleToDelete.id!, this.selectedNewRoleId).subscribe({
       next: (result) => {
+        this.isReassigning = false;
         if (result.success) {
-          // Sau khi gán xong, xóa role cũ
-          this.roleService.deleteRole(this.roleToDelete!.id!).subscribe({
-            next: (deleteResult) => {
-              this.isReassigning = false;
-              if (deleteResult.success) {
-                alert(result.message || `Đã gán role mới cho ${result.updatedCount || this.usersWithRole.length} người dùng và xóa role cũ thành công.`);
-                this.closeReassignModal();
-                this.loadRoles();
-              } else {
-                alert('Đã gán role mới nhưng không thể xóa role cũ: ' + (deleteResult.message || ''));
-                this.closeReassignModal();
-                this.loadRoles();
-              }
-            },
-            error: () => {
-              this.isReassigning = false;
-              alert('Đã gán role mới nhưng có lỗi khi xóa role cũ.');
-              this.closeReassignModal();
-              this.loadRoles();
-            }
-          });
+          alert(result.message || 'Đã gán role mới và xóa role cũ thành công.');
+          this.closeReassignModal();
+          this.loadRoles();
         } else {
-          this.isReassigning = false;
-          alert(result.message || 'Không thể gán role mới.');
+          alert(result.message || 'Không thể gán role mới và xóa role cũ.');
         }
       },
       error: (error) => {
         this.isReassigning = false;
-        alert('Có lỗi xảy ra khi gán role: ' + (error.message || 'Lỗi không xác định'));
+        const errorMessage = error.error?.message || error.message || 'Lỗi không xác định';
+        alert('Có lỗi xảy ra: ' + errorMessage);
       }
     });
   }

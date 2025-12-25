@@ -62,23 +62,23 @@ export class RoleService {
   }
 
   /**
-   * Tìm kiếm roles theo keyword (chỉ tìm trong roleName)
-   * Backend expects: GET /api/roles/search?keyword=xxx&typeRole=PROVIDER&schoolId=1
+   * Tìm kiếm roles theo keyword, schoolId, typeRole
+   * Backend expects: GET /api/roles/search?keyword=xxx&schoolId=1&typeRole=PROVIDER
    */
-  searchRoles(keyword: string, typeRole?: string, schoolId?: number): Observable<Role[]> {
+  searchRoles(keyword?: string, schoolId?: number, typeRole?: string): Observable<Role[]> {
     let params = new HttpParams();
 
     if (keyword && keyword.trim()) {
       params = params.set('keyword', keyword.trim());
     }
-    if (typeRole) {
-      params = params.set('typeRole', typeRole);
-    }
     if (schoolId !== undefined) {
       params = params.set('schoolId', schoolId.toString());
     }
+    if (typeRole) {
+      params = params.set('typeRole', typeRole);
+    }
 
-    console.log('[API Request] GET /roles/search', keyword ? `keyword=${keyword}` : '', typeRole ? `typeRole=${typeRole}` : '', schoolId ? `schoolId=${schoolId}` : '');
+    console.log('[API Request] GET /roles/search', keyword ? `keyword=${keyword}` : '', schoolId ? `schoolId=${schoolId}` : '', typeRole ? `typeRole=${typeRole}` : '');
     return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles/search`, { params, headers: this.getHeaders() })
       .pipe(
         tap(response => console.log('[API Response] GET /roles/search:', response)),
@@ -184,16 +184,43 @@ export class RoleService {
         if (!apiResponse.status) {
           throw new Error(apiResponse.message || 'Lỗi khi xóa role');
         }
-        return { success: true };
+        return { success: true, message: apiResponse.data || apiResponse.message };
       }),
       catchError((error) => {
         console.error(`[API Error] DELETE /roles/${id}:`, error);
         // Backend sẽ trả về lỗi nếu role đang được sử dụng
         const message = error.error?.message || error.message || 'Không thể xóa role này.';
-        return new Observable<{ success: boolean; message?: string }>(observer => {
-          observer.next({ success: false, message });
+        const statusCode = error.status;
+        return new Observable<{ success: boolean; message?: string; statusCode?: number }>(observer => {
+          observer.next({ success: false, message, statusCode });
           observer.complete();
         });
+      })
+    );
+  }
+
+  /**
+   * Gán role mới cho users và xóa role cũ
+   * Backend expects: POST /api/roles/{oldRoleId}/reassign-and-delete?newRoleId={newRoleId}
+   */
+  reassignRoleAndDelete(oldRoleId: number, newRoleId: number): Observable<{ success: boolean; message?: string }> {
+    const params = new HttpParams().set('newRoleId', newRoleId.toString());
+    console.log(`[API Request] POST /roles/${oldRoleId}/reassign-and-delete?newRoleId=${newRoleId}`);
+    return this.http.post<ApiResponse<string>>(`${this.apiUrl}/roles/${oldRoleId}/reassign-and-delete`, null, {
+      params,
+      headers: this.getHeaders()
+    }).pipe(
+      tap(response => console.log(`[API Response] POST /roles/${oldRoleId}/reassign-and-delete:`, response)),
+      map(apiResponse => {
+        if (!apiResponse.status) {
+          throw new Error(apiResponse.message || 'Lỗi khi gán role mới và xóa role cũ');
+        }
+        return { success: true, message: apiResponse.data || apiResponse.message };
+      }),
+      catchError((error) => {
+        console.error(`[API Error] POST /roles/${oldRoleId}/reassign-and-delete:`, error);
+        const message = error.error?.message || error.message || 'Không thể gán role mới và xóa role cũ.';
+        throw { error: { message } };
       })
     );
   }

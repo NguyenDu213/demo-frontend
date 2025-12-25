@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { User } from '../models/user.model';
 import { ApiResponse } from '../models/auth.model';
 
@@ -9,90 +9,62 @@ import { ApiResponse } from '../models/auth.model';
   providedIn: 'root'
 })
 export class UserService {
-  private apiUrl = 'http://localhost:8080/api';
+  private apiUrl = 'http://localhost:8080/api/users';
 
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private http: HttpClient) { }
 
-  /**
-   * Lấy danh sách users
-   * Backend expects: GET /api/users
-   * Backend lấy userId từ JWT token trong header
-   */
+  // Hàm lấy Header có chứa Token
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
+  // Lấy danh sách users
   getUsers(scope?: string, schoolId?: number): Observable<User[]> {
-    // Note: Backend lấy currentUserId từ JWT token trong Authorization header
-    // Backend filters based on current user's permissions
-    // scope and schoolId parameters are kept for compatibility but backend handles filtering
-
-    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users`)
+    console.log('[API Request] GET /users');
+    return this.http.get<ApiResponse<User[]>>(this.apiUrl, { headers: this.getHeaders() })
       .pipe(
-        map(apiResponse => {
-          if (!apiResponse.status || !apiResponse.data) {
-            throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách người dùng');
-          }
-          return apiResponse.data;
-        }),
-        catchError(error => {
-          const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách người dùng';
-          throw { error: { message: errorMessage } };
-        })
+        tap(response => console.log('[API Response] GET /users:', response)),
+        map(response => response.data)
       );
   }
 
-  /**
-   * Tìm kiếm users
-   * Backend expects: GET /api/users/search?keyword=xxx
-   * Backend lấy userId từ JWT token trong header
-   */
+  // Tìm kiếm users
   searchUsers(keyword?: string, schoolId?: number): Observable<User[]> {
     let params = new HttpParams();
-
     if (keyword) {
       params = params.set('keyword', keyword);
     }
-    // Note: schoolId parameter kept for compatibility but backend handles filtering based on user's permissions
-
-    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users/search`, { params })
-      .pipe(
-        map(apiResponse => {
-          if (!apiResponse.status || !apiResponse.data) {
-            throw new Error(apiResponse.message || 'Lỗi khi tìm kiếm người dùng');
-          }
-          return apiResponse.data;
-        }),
-        catchError(error => {
-          const errorMessage = error.error?.message || error.message || 'Lỗi khi tìm kiếm người dùng';
-          throw { error: { message: errorMessage } };
-        })
-      );
-  }
-
-  getUserById(id: number): Observable<User> {
-    // Backend doesn't have a direct getUserById endpoint, use search or get all and filter
-    return this.getUsers().pipe(
-      map(users => {
-        const user = users.find(u => u.id === id);
-        if (!user) {
-          throw new Error('Không tìm thấy người dùng');
-        }
-        return user;
-      }),
-      catchError(error => {
-        const errorMessage = error.error?.message || error.message || 'Không tìm thấy người dùng';
-        throw { error: { message: errorMessage } };
-      })
+    console.log('[API Request] GET /users/search keyword:', keyword);
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/search`, {
+      headers: this.getHeaders(),
+      params: params
+    }).pipe(
+      tap(response => console.log('[API Response] Search:', response)),
+      map(response => response.data)
     );
   }
 
-  /**
-   * Tạo user mới
-   * Backend expects: POST /api/users
-   * Backend lấy userId từ JWT token trong header
-   */
+  // Lấy user theo ID
+  getUserById(id: number): Observable<User> {
+    console.log(`[API Request] GET /users/${id}`);
+    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] GET /users/${id}:`, response)),
+        map(response => response.data)
+      );
+  }
+
+  // Tạo user mới
   createUser(user: User): Observable<User> {
     // Convert User to backend format (remove id, createdAt, updatedAt, createBy, updateBy)
-    // Backend không mong đợi createBy và updateBy vì nó lấy từ JWT token
     const { id, createdAt, updatedAt, createBy, updateBy, ...userRequest } = user;
 
     // Convert birthYear từ "yyyy-MM-dd" sang "yyyy-MM-ddTHH:mm:ss" format cho LocalDateTime
@@ -103,26 +75,15 @@ export class UserService {
         : userRequest.birthYear
     };
 
-    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/users`, requestBody)
+    console.log('[API Request] POST /users Payload:', requestBody);
+    return this.http.post<ApiResponse<User>>(this.apiUrl, requestBody, { headers: this.getHeaders() })
       .pipe(
-        map(apiResponse => {
-          if (!apiResponse.status || !apiResponse.data) {
-            throw new Error(apiResponse.message || 'Lỗi khi tạo người dùng');
-          }
-          return apiResponse.data;
-        }),
-        catchError(error => {
-          const errorMessage = error.error?.message || error.message || 'Lỗi khi tạo người dùng';
-          throw { error: { message: errorMessage } };
-        })
+        tap(response => console.log('[API Response] POST /users:', response)),
+        map(response => response.data)
       );
   }
 
-  /**
-   * Cập nhật user
-   * Backend expects: PUT /api/users/{id}
-   * Backend lấy userId từ JWT token trong header
-   */
+  // Cập nhật user
   updateUser(id: number, user: User): Observable<User> {
     // Convert User to backend format (remove id, createdAt, updatedAt, createBy)
     const { id: userId, createdAt, updatedAt, createBy, ...userRequest } = user;
@@ -135,113 +96,63 @@ export class UserService {
         : userRequest.birthYear
     };
 
-    return this.http.put<ApiResponse<User>>(`${this.apiUrl}/users/${id}`, requestBody)
+    console.log(`[API Request] PUT /users/${id} Payload:`, requestBody);
+    return this.http.put<ApiResponse<User>>(`${this.apiUrl}/${id}`, requestBody, { headers: this.getHeaders() })
       .pipe(
-        map(apiResponse => {
-          if (!apiResponse.status || !apiResponse.data) {
-            throw new Error(apiResponse.message || 'Lỗi khi cập nhật người dùng');
-          }
-          return apiResponse.data;
-        }),
-        catchError(error => {
-          const errorMessage = error.error?.message || error.message || 'Lỗi khi cập nhật người dùng';
-          throw { error: { message: errorMessage } };
-        })
+        tap(response => console.log(`[API Response] PUT /users/${id}:`, response)),
+        map(response => response.data)
       );
   }
 
-  /**
-   * Xóa user
-   * Backend expects: DELETE /api/users/{id}
-   */
+  // Xóa user
   deleteUser(id: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/users/${id}`)
+    console.log(`[API Request] DELETE /users/${id}`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
       .pipe(
-        map(apiResponse => {
-          if (!apiResponse.status) {
-            throw new Error(apiResponse.message || 'Lỗi khi xóa người dùng');
-          }
-          return void 0;
-        }),
-        catchError(error => {
-          const errorMessage = error.error?.message || error.message || 'Lỗi khi xóa người dùng';
-          throw { error: { message: errorMessage } };
-        })
+        tap(response => console.log(`[API Response] DELETE /users/${id}:`, response)),
+        map(() => void 0)
       );
   }
 
-  /**
-   * Kiểm tra xem role có đang được sử dụng bởi user nào không
-   * GET /api/users/role-in-use/{roleId}
-   */
+  // Kiểm tra xem role có đang được sử dụng bởi user nào không
   isRoleInUse(roleId: number): Observable<boolean> {
-    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/users/role-in-use/${roleId}`).pipe(
-      map(apiResponse => {
-        if (!apiResponse.status || apiResponse.data === undefined) {
-          // If error, assume role is in use to be safe
-          return true;
-        }
-        return apiResponse.data;
-      }),
-      catchError(() => {
-        // If error, assume role is in use to be safe
-        return new Observable<boolean>(observer => {
-          observer.next(true);
-          observer.complete();
-        });
-      })
-    );
+    console.log(`[API Request] GET /users/role-in-use/${roleId}`);
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/role-in-use/${roleId}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] Role in use:`, response)),
+        map(response => response.data)
+      );
   }
 
-  /**
-   * Lấy danh sách user đang sử dụng role
-   * GET /api/users/by-role/{roleId}
-   */
+  // Lấy danh sách user đang sử dụng role
   getUsersByRoleId(roleId: number): Observable<User[]> {
-    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/users/by-role/${roleId}`).pipe(
-      map(apiResponse => {
-        if (!apiResponse.status || !apiResponse.data) {
-          throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách users');
-        }
-        return apiResponse.data;
-      }),
-      catchError(error => {
-        const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách users';
-        throw { error: { message: errorMessage } };
-      })
-    );
+    console.log(`[API Request] GET /users/by-role/${roleId}`);
+    return this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/by-role/${roleId}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] Users by role:`, response)),
+        map(response => response.data)
+      );
   }
 
-  /**
-   * Gán role mới cho tất cả users đang sử dụng role cũ
-   * PUT /api/users/reassign-role?oldRoleId={oldRoleId}&newRoleId={newRoleId}
-   */
+  // Gán role mới cho tất cả users đang sử dụng role cũ
   reassignRole(oldRoleId: number, newRoleId: number): Observable<{ success: boolean; message?: string; updatedCount?: number }> {
     const params = new HttpParams()
       .set('oldRoleId', oldRoleId.toString())
       .set('newRoleId', newRoleId.toString());
 
-    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/users/reassign-role`, null, { params }).pipe(
-      map(apiResponse => {
-        if (!apiResponse.status) {
-          return {
-            success: false,
-            message: apiResponse.message || 'Không thể gán role mới'
-          };
-        }
-        const updatedCount = apiResponse.data ? parseInt(apiResponse.data, 10) : 0;
+    console.log(`[API Request] PUT /users/reassign-role?oldRoleId=${oldRoleId}&newRoleId=${newRoleId}`);
+    return this.http.put<ApiResponse<string>>(`${this.apiUrl}/reassign-role`, null, { 
+      headers: this.getHeaders(), 
+      params 
+    }).pipe(
+      tap(response => console.log('[API Response] Reassign role:', response)),
+      map(response => {
+        const updatedCount = response.data ? parseInt(response.data, 10) : 0;
         return {
           success: true,
-          message: apiResponse.message || `Đã gán role mới cho ${updatedCount} người dùng`,
+          message: response.message || `Đã gán role mới cho ${updatedCount} người dùng`,
           updatedCount: updatedCount
         };
-      }),
-      catchError(error => {
-        const errorMessage = error.error?.message || error.message || 'Lỗi khi gán role mới';
-        return new Observable<{ success: boolean; message?: string; updatedCount?: number }>(observer => {
-          observer.next({ success: false, message: errorMessage });
-          observer.complete();
-        });
       })
     );
   }

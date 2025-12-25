@@ -64,7 +64,7 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
     const searchObservable = this.searchTerm.trim()
-      ? this.roleService.searchRoles(this.searchTerm, 'PROVIDER')
+      ? this.roleService.searchRoles(this.searchTerm, undefined, 'PROVIDER')
       : this.roleService.getRoles('PROVIDER');
 
     searchObservable.subscribe({
@@ -196,56 +196,78 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     const role = this.roles.find(r => r.id === id);
     if (!role) return;
 
-    // Mở modal ngay lập tức và load dữ liệu sau để tránh phải click 2 lần
-    this.openReassignModal(role);
+    // Xóa trực tiếp, backend sẽ trả về lỗi nếu role đang được sử dụng
+    if (confirm(`Bạn có chắc chắn muốn xóa role "${role.roleName}"?`)) {
+      this.roleService.deleteRole(id).subscribe({
+        next: (result) => {
+          if (result.success) {
+            this.loadRoles();
+            alert('Xóa role thành công!');
+          } else {
+            // Nếu có lỗi, kiểm tra xem có phải do role đang được sử dụng không
+            const message = result.message || '';
+            const statusCode = (result as any).statusCode;
 
-    // Kiểm tra xem role có đang được sử dụng không
-    this.userService.isRoleInUse(id).subscribe({
-      next: (isInUse) => {
-        if (!isInUse) {
-          // Nếu không có user sử dụng, đóng modal và xóa trực tiếp
-          this.closeReassignModal();
-          this.roleService.deleteRole(id).subscribe({
-            next: (result) => {
-              if (result.success) {
-                this.loadRoles();
-              } else {
-                alert(result.message || 'Không thể xóa role này.');
-              }
-            },
-            error: (error) => {
-              alert('Có lỗi xảy ra khi xóa role: ' + (error.message || 'Lỗi không xác định'));
+            // Kiểm tra HTTP status code 409 (Conflict) hoặc message chứa "người dùng sử dụng"
+            if (statusCode === 409 || message.includes('người dùng sử dụng') || message.includes('Conflict')) {
+              // Mở modal reassign
+              this.openReassignModal(role);
+            } else {
+              alert(result.message || 'Không thể xóa role này.');
             }
-          });
+          }
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || error.message || 'Lỗi không xác định';
+          const statusCode = error.status;
+
+          // Kiểm tra HTTP status code 409 (Conflict) hoặc message chứa "người dùng sử dụng"
+          if (statusCode === 409 || errorMessage.includes('người dùng sử dụng') || errorMessage.includes('Conflict')) {
+            // Mở modal reassign
+            this.openReassignModal(role);
+          } else {
+            alert('Có lỗi xảy ra khi xóa role: ' + errorMessage);
+          }
         }
-        // Nếu có user sử dụng, modal đã được mở và dữ liệu đang được load
-      },
-      error: () => {
-        this.closeReassignModal();
-        alert('Có lỗi xảy ra khi kiểm tra role.');
-      }
-    });
+      });
+    }
   }
 
   openReassignModal(role: Role): void {
     this.roleToDelete = role;
     this.selectedNewRoleId = null;
     this.isReassignModalOpen = true;
+    this.alternativeRoles = [];
     this.cdr.detectChanges(); // Đảm bảo modal hiển thị ngay lập tức
 
-    // Load danh sách users đang sử dụng role này
-    this.userService.getUsersByRoleId(role.id!).subscribe({
-      next: (users) => {
-        this.usersWithRole = users;
-        this.cdr.detectChanges();
-      }
-    });
+    // Load lại role để có userCount mới nhất
+    if (role.id) {
+      this.roleService.getRoleById(role.id).subscribe({
+        next: (updatedRole) => {
+          this.roleToDelete = updatedRole;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error loading role details:', error);
+        }
+      });
+    }
 
     // Load danh sách role khác cùng typeRole (trừ role đang xóa)
     this.roleService.getRoles(role.typeRole).subscribe({
       next: (roles) => {
-        // Filter dựa trên roleName thay vì id
-        this.alternativeRoles = roles.filter(r => r.id !== role.id && r.roleName !== 'SYSTEM_ADMIN');
+        // Filter dựa trên roleName thay vì id - loại bỏ role đang xóa và SYSTEM_ADMIN
+        this.alternativeRoles = roles.filter(r =>
+          r.id !== role.id &&
+          r.roleName !== 'SYSTEM_ADMIN'
+        );
+        console.log('Alternative roles loaded:', this.alternativeRoles);
+        console.log('Role to delete:', this.roleToDelete);
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading alternative roles:', error);
+        this.alternativeRoles = [];
         this.cdr.detectChanges();
       }
     });
@@ -271,38 +293,22 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     }
 
     this.isReassigning = true;
-    this.userService.reassignRole(this.roleToDelete.id!, this.selectedNewRoleId).subscribe({
+    // Gọi API reassign và delete trong một lần
+    this.roleService.reassignRoleAndDelete(this.roleToDelete.id!, this.selectedNewRoleId).subscribe({
       next: (result) => {
+        this.isReassigning = false;
         if (result.success) {
-          // Sau khi gán xong, xóa role cũ
-          this.roleService.deleteRole(this.roleToDelete!.id!).subscribe({
-            next: (deleteResult) => {
-              this.isReassigning = false;
-              if (deleteResult.success) {
-                alert(result.message || `Đã gán role mới cho ${result.updatedCount || this.usersWithRole.length} người dùng và xóa role cũ thành công.`);
-                this.closeReassignModal();
-                this.loadRoles();
-              } else {
-                alert('Đã gán role mới nhưng không thể xóa role cũ: ' + (deleteResult.message || ''));
-                this.closeReassignModal();
-                this.loadRoles();
-              }
-            },
-            error: () => {
-              this.isReassigning = false;
-              alert('Đã gán role mới nhưng có lỗi khi xóa role cũ.');
-              this.closeReassignModal();
-              this.loadRoles();
-            }
-          });
+          alert(result.message || 'Đã gán role mới và xóa role cũ thành công.');
+          this.closeReassignModal();
+          this.loadRoles();
         } else {
-          this.isReassigning = false;
-          alert(result.message || 'Không thể gán role mới.');
+          alert(result.message || 'Không thể gán role mới và xóa role cũ.');
         }
       },
       error: (error) => {
         this.isReassigning = false;
-        alert('Có lỗi xảy ra khi gán role: ' + (error.message || 'Lỗi không xác định'));
+        const errorMessage = error.error?.message || error.message || 'Lỗi không xác định';
+        alert('Có lỗi xảy ra: ' + errorMessage);
       }
     });
   }
@@ -364,11 +370,23 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     const errorBody = err.error;
     console.log('errorBody:', errorBody);
 
+    // Kiểm tra validation errors (field errors) - có thể ở data hoặc trực tiếp trong errorBody
     if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
-      this.fieldErrors = errorBody.data;
-      console.log('Phát hiện lỗi Validation:', this.fieldErrors);
-      // Không hiển thị alert khi có validation errors, chỉ hiển thị trên form
-    } else if (errorBody && errorBody.message) {
+      // Kiểm tra xem data có chứa field errors không (ví dụ: { roleName: "error message" })
+      const hasFieldErrors = Object.keys(errorBody.data).some(key =>
+        typeof errorBody.data[key] === 'string' && key !== 'message'
+      );
+
+      if (hasFieldErrors) {
+        this.fieldErrors = errorBody.data;
+        console.log('Phát hiện lỗi Validation:', this.fieldErrors);
+        // Không hiển thị alert khi có validation errors, chỉ hiển thị trên form
+        return;
+      }
+    }
+
+    // Nếu không phải validation errors, hiển thị message
+    if (errorBody && errorBody.message) {
       console.log('Hiển thị alert với message:', errorBody.message);
       alert(errorBody.message);
     } else {
