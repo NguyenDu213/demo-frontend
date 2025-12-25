@@ -35,6 +35,13 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
   // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
   fieldErrors: { [key: string]: string } = {};
 
+  // Pagination
+  pageSizes: number[] = [3, 5, 10];
+  pageSize: number = 5;
+  currentPage: number = 1;
+  totalItems: number = 0;
+  totalPages: number = 1;
+
   constructor(
     private userService: UserService,
     private roleService: RoleService,
@@ -118,6 +125,9 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
                 }
 
                 this.users = filteredUsers;
+                // cập nhật thông tin phân trang
+                this.totalItems = filteredUsers.length;
+                this.recomputePagination();
                 this.isLoading = false;
                 this.cdr.detectChanges();
               },
@@ -316,33 +326,83 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteUser(id: number): void {
-    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
-      this.userService.deleteUser(id).subscribe({
-        next: () => {
-          this.loadUsers();
-        },
-      });
+    deleteUser(id: number): void {
+      if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
+        this.userService.deleteUser(id).subscribe({
+          next: () => {
+            this.loadUsers();
+          },
+        });
+      }
     }
-  }
 
-  get filteredUsers(): User[] {
-    // Users đã được filter trong loadUsers()
-    return this.users;
-  }
+    get filteredUsers(): User[] {
+      // Users đã được filter trong loadUsers(); apply pagination here
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.users.slice(start, end);
+    }
 
-  /**
-   * Gọi khi search term thay đổi
-   */
-  onSearchChange(): void {
-    this.searchSubject.next(this.searchTerm);
-  }
+    /**
+     * Gọi khi search term thay đổi
+     */
+    onSearchChange(): void {
+      this.currentPage = 1;
+      this.searchSubject.next(this.searchTerm);
+    }
 
-  isAdminUser(): boolean {
-    // Kiểm tra xem user đang edit có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
-    const role = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
-    return role?.roleName === 'SYSTEM_ADMIN' || role?.roleName === 'SCHOOL_ADMIN' || false;
-  }
+    isAdminUser(): boolean {
+      // Kiểm tra xem user đang edit có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
+      const role = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
+      return role?.roleName === 'SYSTEM_ADMIN' || role?.roleName === 'SCHOOL_ADMIN' || false;
+    }
+
+    get pages(): number[] {
+      return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    }
+
+    onPageSizeChange(): void {
+      this.currentPage = 1;
+      this.recomputePagination();
+    }
+
+    goToPage(page: number): void {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+    }
+
+    prevPage(): void {
+      if (this.currentPage > 1) this.currentPage--;
+    }
+
+    nextPage(): void {
+      if (this.currentPage < this.totalPages) this.currentPage++;
+    }
+
+    private recomputePagination(): void {
+      this.totalItems = this.users.length;
+      this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.pageSize));
+      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+    }
+
+
+  // get filteredUsers(): User[] {
+  //   // Users đã được filter trong loadUsers()
+  //   return this.users;
+  // }
+
+  // /**
+  //  * Gọi khi search term thay đổi
+  //  */
+  // onSearchChange(): void {
+  //   this.searchSubject.next(this.searchTerm);
+  // }
+
+  // isAdminUser(): boolean {
+  //   // Kiểm tra xem user đang edit có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
+  //   const role = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
+  //   return role?.roleName === 'SYSTEM_ADMIN' || role?.roleName === 'SCHOOL_ADMIN' || false;
+  // }
 
   getRoleName(roleId: number): string {
     // Tìm trong allRoles để bao gồm cả PROVIDER và SCHOOL roles

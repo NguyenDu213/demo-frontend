@@ -30,6 +30,13 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
   fieldErrors: { [key: string]: string } = {};
 
+  // Pagination
+  pageSizes: number[] = [3, 5, 10];
+  pageSize: number = 5;
+  currentPage: number = 1;
+  totalItems: number = 0;
+  totalPages: number = 1;
+
   constructor(
     private userService: UserService,
     private roleService: RoleService,
@@ -80,6 +87,9 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
               }
 
               this.users = filteredUsers;
+              // pagination
+              this.totalItems = filteredUsers.length;
+              this.recomputePagination();
               this.isLoading = false;
               this.cdr.detectChanges();
             },
@@ -262,15 +272,46 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   }
 
   get filteredUsers(): User[] {
-    // Filter đã được thực hiện trong loadUsers()
-    return this.users;
+    // Filter đã được thực hiện trong loadUsers(); apply pagination here
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.users.slice(start, end);
   }
 
   /**
    * Gọi khi search term thay đổi
    */
   onSearchChange(): void {
+    this.currentPage = 1;
     this.searchSubject.next(this.searchTerm);
+  }
+
+  get pages(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.recomputePagination();
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) this.currentPage--;
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) this.currentPage++;
+  }
+
+  private recomputePagination(): void {
+    this.totalItems = this.users.length;
+    this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.pageSize));
+    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
   }
 
   getRoleName(roleId: number): string {
