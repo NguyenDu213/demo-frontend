@@ -24,6 +24,12 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
   typeRoles = Object.values(TypeRole);
   isSaving: boolean = false;
 
+  // Pagination
+  currentPage: number = 0;
+  pageSize: number = 3;
+  totalElements: number = 0;
+  totalPages: number = 0;
+
   // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
   fieldErrors: { [key: string]: string } = {};
 
@@ -62,15 +68,26 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
 
   loadRoles(): void {
     this.isLoading = true;
-    // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
+    // Nếu có searchTerm, gọi API search với pagination, nếu không thì gọi getAllRoles với pagination
     const searchObservable = this.searchTerm.trim()
-      ? this.roleService.searchRoles(this.searchTerm, undefined, 'PROVIDER')
-      : this.roleService.getRoles('PROVIDER');
+      ? this.roleService.searchRolesPaginated(this.searchTerm, undefined, 'PROVIDER', this.currentPage, this.pageSize)
+      : this.roleService.getRolesPaginated('PROVIDER', this.currentPage, this.pageSize);
 
     searchObservable.subscribe({
-      next: (data) => {
-        // Ẩn role "SYSTEM_ADMIN" dựa trên roleName (không dùng id vì có thể khác nhau giữa mock và real API)
-        this.roles = data.filter(role => role.roleName !== 'SYSTEM_ADMIN');
+      next: (pageData) => {
+        // Ẩn role "SYSTEM_ADMIN" dựa trên roleName
+        this.roles = pageData.data.filter(role => role.roleName !== 'SYSTEM_ADMIN');
+        this.totalElements = pageData.totalElements;
+        this.totalPages = pageData.totalPages;
+        
+        // Đảm bảo currentPage không vượt quá totalPages
+        if (this.totalPages > 0 && this.currentPage >= this.totalPages) {
+          this.currentPage = this.totalPages - 1;
+          // Reload với page mới
+          this.loadRoles();
+          return;
+        }
+        
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -201,6 +218,10 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
       this.roleService.deleteRole(id).subscribe({
         next: (result) => {
           if (result.success) {
+            // Nếu xóa item cuối cùng trên trang và không phải trang đầu, chuyển về trang trước
+            if (this.roles.length === 1 && this.currentPage > 0) {
+              this.currentPage--;
+            }
             this.loadRoles();
             alert('Xóa role thành công!');
           } else {
@@ -254,10 +275,11 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
     }
 
     // Load danh sách role khác cùng typeRole (trừ role đang xóa)
-    this.roleService.getRoles(role.typeRole).subscribe({
-      next: (roles) => {
+    // Dùng pagination với size lớn để lấy tất cả roles
+    this.roleService.getRolesPaginated(role.typeRole, 0, 100).subscribe({
+      next: (pageData) => {
         // Filter dựa trên roleName thay vì id - loại bỏ role đang xóa và SYSTEM_ADMIN
-        this.alternativeRoles = roles.filter(r =>
+        this.alternativeRoles = pageData.data.filter(r =>
           r.id !== role.id &&
           r.roleName !== 'SYSTEM_ADMIN'
         );
@@ -300,6 +322,10 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
         if (result.success) {
           alert(result.message || 'Đã gán role mới và xóa role cũ thành công.');
           this.closeReassignModal();
+          // Nếu xóa item cuối cùng trên trang và không phải trang đầu, chuyển về trang trước
+          if (this.roles.length === 1 && this.currentPage > 0) {
+            this.currentPage--;
+          }
           this.loadRoles();
         } else {
           alert(result.message || 'Không thể gán role mới và xóa role cũ.');
@@ -323,7 +349,33 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
    * Gọi khi search term thay đổi
    */
   onSearchChange(): void {
+    this.currentPage = 0; // Reset về trang đầu khi search
     this.searchSubject.next(this.searchTerm);
+  }
+
+  /**
+   * Chuyển trang
+   */
+  changePage(newPage: number): void {
+    if (newPage >= 0 && newPage < this.totalPages) {
+      this.currentPage = newPage;
+      this.loadRoles();
+    }
+  }
+
+  /**
+   * Thay đổi số lượng items mỗi trang
+   */
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadRoles();
+  }
+
+  /**
+   * Tạo mảng số trang để hiển thị
+   */
+  get pagesArray(): number[] {
+    return Array(this.totalPages).fill(0).map((x, i) => i);
   }
 
   /**

@@ -24,6 +24,12 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   isSaving: boolean = false;
 
+  // Pagination
+  currentPage: number = 0;
+  pageSize: number = 3;
+  totalElements: number = 0;
+  totalPages: number = 0;
+
   // Modal gán role mới
   isReassignModalOpen: boolean = false;
   roleToDelete: Role | null = null;
@@ -60,15 +66,26 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     const schoolId = this.currentUser?.schoolId ?? undefined;
 
-    // Nếu có searchTerm, gọi API search, nếu không thì gọi getAllRoles
+    // Nếu có searchTerm, gọi API search với pagination, nếu không thì gọi getAllRoles với pagination
     const searchObservable = this.searchTerm.trim()
-      ? this.roleService.searchRoles(this.searchTerm, schoolId, 'SCHOOL')
-      : this.roleService.getRoles('SCHOOL', schoolId);
+      ? this.roleService.searchRolesPaginated(this.searchTerm, schoolId, 'SCHOOL', this.currentPage, this.pageSize)
+      : this.roleService.getRolesPaginated('SCHOOL', this.currentPage, this.pageSize);
 
     searchObservable.subscribe({
-      next: (data) => {
+      next: (pageData) => {
         // Filter bỏ role "SCHOOL_ADMIN" - không hiển thị trong danh sách
-        this.roles = data.filter(role => role.roleName !== 'SCHOOL_ADMIN');
+        this.roles = pageData.data.filter(role => role.roleName !== 'SCHOOL_ADMIN');
+        this.totalElements = pageData.totalElements;
+        this.totalPages = pageData.totalPages;
+
+        // Đảm bảo currentPage không vượt quá totalPages
+        if (this.totalPages > 0 && this.currentPage >= this.totalPages) {
+          this.currentPage = this.totalPages - 1;
+          // Reload với page mới
+          this.loadRoles();
+          return;
+        }
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -164,6 +181,8 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       this.roleService.createRole(this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
+          // Reset về trang đầu khi thêm mới
+          this.currentPage = 0;
           this.loadRoles();
           this.closeModal();
         },
@@ -222,6 +241,10 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       this.roleService.deleteRole(id).subscribe({
         next: (result) => {
           if (result.success) {
+            // Nếu xóa item cuối cùng trên trang và không phải trang đầu, chuyển về trang trước
+            if (this.roles.length === 1 && this.currentPage > 0) {
+              this.currentPage--;
+            }
             this.loadRoles();
             alert('Xóa role thành công!');
           } else {
@@ -275,10 +298,11 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     }
 
     // Load danh sách role khác cùng typeRole (trừ role đang xóa)
+    // Dùng pagination với size lớn để lấy tất cả roles
     const schoolId = this.currentUser?.schoolId ?? undefined;
-    this.roleService.getRoles(role.typeRole, schoolId).subscribe({
-      next: (roles) => {
-        this.alternativeRoles = roles.filter(r =>
+    this.roleService.getRolesPaginated(role.typeRole, 0, 100).subscribe({
+      next: (pageData) => {
+        this.alternativeRoles = pageData.data.filter(r =>
           r.id !== role.id &&
           r.roleName !== 'SCHOOL_ADMIN' &&
           (r.schoolId === schoolId || r.schoolId === null)
@@ -322,6 +346,10 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
         if (result.success) {
           alert(result.message || 'Đã gán role mới và xóa role cũ thành công.');
           this.closeReassignModal();
+          // Nếu xóa item cuối cùng trên trang và không phải trang đầu, chuyển về trang trước
+          if (this.roles.length === 1 && this.currentPage > 0) {
+            this.currentPage--;
+          }
           this.loadRoles();
         } else {
           alert(result.message || 'Không thể gán role mới và xóa role cũ.');
@@ -336,8 +364,7 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
   }
 
   get filteredRoles(): Role[] {
-    // Roles đã được filter từ API search, chỉ cần trả về danh sách
-    // Không cần filter thêm vì đã được xử lý trong loadRoles()
+    // Roles đã được filter và pagination trong loadRoles()
     return this.roles;
   }
 
@@ -345,7 +372,33 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
    * Gọi khi search term thay đổi
    */
   onSearchChange(): void {
+    this.currentPage = 0; // Reset về trang đầu khi search
     this.searchSubject.next(this.searchTerm);
+  }
+
+  /**
+   * Chuyển trang
+   */
+  changePage(newPage: number): void {
+    if (newPage >= 0 && newPage < this.totalPages) {
+      this.currentPage = newPage;
+      this.loadRoles();
+    }
+  }
+
+  /**
+   * Thay đổi số lượng items mỗi trang
+   */
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+    this.loadRoles();
+  }
+
+  /**
+   * Tạo mảng số trang để hiển thị
+   */
+  get pagesArray(): number[] {
+    return Array(this.totalPages).fill(0).map((x, i) => i);
   }
 }
 
