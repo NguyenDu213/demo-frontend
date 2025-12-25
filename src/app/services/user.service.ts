@@ -59,10 +59,19 @@ export class UserService {
           console.log('[API Request] POST /users Payload:', user);
           return this.http.post<ApiResponse<User>>(this.apiUrl, user, { headers: this.getHeaders() })
             .pipe(
-              tap(response => console.log('[API Response] POST /schools:', response)),
+              tap(response => console.log('[API Response] POST /users:', response)),
               map(response => response.data)
             );
         }
+          // Xóa user
+  deleteUser(id: number): Observable<void> {
+    console.log(`[API Request] DELETE /users/${id}`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() })
+      .pipe(
+        tap(response => console.log(`[API Response] DELETE /users/${id}:`, response)),
+        map(() => void 0)
+      );
+  }
       
   
   private initializeMockData(): void {
@@ -93,29 +102,20 @@ export class UserService {
     localStorage.setItem(this.mockDataKey, JSON.stringify(users));
   }
 
-  getUsers(scope?: string, schoolId?: number): Observable<User[]> {
-    if (USE_MOCK_DATA) {
-      let users = this.getMockUsers();
-      
-      if (scope) {
-        users = users.filter(u => u.scope === scope);
-      }
-      
-      if (schoolId !== undefined) {
-        users = users.filter(u => u.schoolId === schoolId);
-      }
-      
-      return of(users).pipe(delay(300));
-    }
-
-    let params = new HttpParams();
-    if (scope) {
-      params = params.set('scope', scope);
-    }
-    if (schoolId !== undefined) {
-      params = params.set('schoolId', schoolId.toString());
-    }
-    return this.http.get<User[]>(`${this.apiUrl}/users`, { params });
+  getUsers(): Observable<User[]> {
+    // let params = new HttpParams();
+    // if (scope) {
+    //   params = params.set('scope', scope);
+    // }
+    // if (schoolId !== undefined) {
+    //   params = params.set('schoolId', schoolId.toString());
+    // }
+    console.log('[API Request] GET /users');
+      return this.http.get<ApiResponse<User[]>>(this.apiUrl, { headers: this.getHeaders() })
+        .pipe(
+          tap(response => console.log('[API Response] GET /users:', response)),
+          map(response => response.data) // Bóc tách lấy data thật
+        );
   }
 
   getUserById(id: number): Observable<User> {
@@ -171,7 +171,7 @@ export class UserService {
     return this.http.put<User>(`${this.apiUrl}/users/${id}`, user);
   }
 
-  deleteUser(id: number): Observable<void> {
+  delete1User(id: number): Observable<void> {
     if (USE_MOCK_DATA) {
       const users = this.getMockUsers();
       const filtered = users.filter(u => u.id !== id);

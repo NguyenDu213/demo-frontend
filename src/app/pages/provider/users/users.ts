@@ -1,4 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 import { RoleService } from '../../../services/role.service';
 import { SchoolService } from '../../../services/school.service';
@@ -28,6 +29,8 @@ export class ProviderUsersComponent implements OnInit {
   genders = Object.values(Gender);
   scopes = Object.values(Scope);
   isSaving: boolean = false;
+  // Max date for birthYear input (today) to ensure birth date is in the past
+  maxDate: string = new Date().toISOString().split('T')[0];
 
   constructor(
     private userService: UserService,
@@ -144,14 +147,14 @@ export class ProviderUsersComponent implements OnInit {
     return {
       fullName: '',
       gender: Gender.MALE,
-      birthYear: '',
+      birthYear: '2022-05-20T00:00:00',
       address: '',
       phoneNumber: '',
       email: '',
       password: '',
       isActive: false,
       scope: Scope.PROVIDER,
-      roleId: 0,
+      roleId: 2,
       createBy: currentUserId,
       updateBy: currentUserId
     };
@@ -194,10 +197,21 @@ export class ProviderUsersComponent implements OnInit {
     this.loadRoles();
   }
 
-  saveUser(): void {
+  saveUser(form?: NgForm): void {
     // Prevent double submission
     if (this.isSaving) {
       return;
+    }
+
+    // If a form is passed, validate it first
+    if (form) {
+      // mark all fields as touched to show validation
+      try { form.form.markAllAsTouched(); } catch (e) {}
+      // custom check for roleId when it's still the default (0)
+      if (form.invalid || this.selectedUser.roleId === 0) {
+        this.isSaving = false;
+        return;
+      }
     }
 
     this.isSaving = true;

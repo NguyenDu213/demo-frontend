@@ -104,18 +104,26 @@
         </p>
       </div>
 
-      <form (ngSubmit)="saveUser()" class="space-y-4">
+      <form #userForm="ngForm" (ngSubmit)="saveUser(userForm)" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên *</label>
-            <input type="text" [(ngModel)]="selectedUser.fullName" name="fullName" required
+            <input type="text" #fullName="ngModel" [(ngModel)]="selectedUser.fullName" name="fullName" required minlength="2" maxlength="100"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            <p *ngIf="(fullName.invalid && (fullName.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+              <span *ngIf="fullName.errors?.['required']">Họ tên không được để trống</span>
+              <span *ngIf="fullName.errors?.['minlength'] || fullName.errors?.['maxlength']">Họ tên phải từ 2 đến 100 ký tự</span>
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-            <input type="email" [(ngModel)]="selectedUser.email" name="email" [required]="!isEditMode || isAdminUser()"
+            <input type="email" #email="ngModel" [(ngModel)]="selectedUser.email" name="email" [required]="!isEditMode || isAdminUser()"
               [disabled]="isEditMode && !isAdminUser()"
               [class]="'w-full px-4 py-2 border border-gray-300 rounded-lg outline-none ' + (isEditMode && !isAdminUser() ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : 'focus:ring-2 focus:ring-blue-500 focus:border-transparent')" />
+            <p *ngIf="(email.invalid && (email.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+              <span *ngIf="email.errors?.['required']">Email không được để trống</span>
+              <span *ngIf="email.errors?.['email']">Email không hợp lệ</span>
+            </p>
             <p *ngIf="isEditMode && !isAdminUser()" class="mt-1 text-xs text-gray-500">Email không thể thay đổi</p>
           </div>
         </div>
@@ -124,9 +132,13 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu *</label>
             <div *ngIf="!isEditMode || isAdminUser()" class="relative">
-              <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="selectedUser.password" name="password"
-                [required]="!isEditMode"
+              <input [type]="showPassword ? 'text' : 'password'" #password="ngModel" [(ngModel)]="selectedUser.password" name="password"
+                [required]="!isEditMode" minlength="6" maxlength="100"
                 class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <p *ngIf="(password.invalid && (password.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+                <span *ngIf="password.errors?.['required']">Mật khẩu không được để trống</span>
+                <span *ngIf="password.errors?.['minlength'] || password.errors?.['maxlength']">Mật khẩu phải từ 6 đến 100 ký tự</span>
+              </p>
               <button type="button" (click)="togglePasswordVisibility()"
                 class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
                 <svg *ngIf="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,30 +162,43 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
-            <input type="text" [(ngModel)]="selectedUser.phoneNumber" name="phoneNumber" required
+            <input type="text" #phone="ngModel" [(ngModel)]="selectedUser.phoneNumber" name="phoneNumber" required pattern="^(0|\\+84)[0-9]{9,10}$"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            <p *ngIf="(phone.invalid && (phone.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+              <span *ngIf="phone.errors?.['required']">Số điện thoại không được để trống</span>
+              <span *ngIf="phone.errors?.['pattern']">Số điện thoại không hợp lệ</span>
+            </p>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Giới tính *</label>
-            <select [(ngModel)]="selectedUser.gender" name="gender" required
+            <select #gender="ngModel" [(ngModel)]="selectedUser.gender" name="gender" required
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
               <option *ngFor="let gender of genders" [value]="gender">{{ gender }}</option>
             </select>
+            <p *ngIf="(gender.invalid && (gender.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">Giới tính không được để trống</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh *</label>
-            <input type="date" [(ngModel)]="selectedUser.birthYear" name="birthYear" required
+            <input type="date" #birthYear="ngModel" [(ngModel)]="selectedUser.birthYear" name="birthYear" required [max]="maxDate"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+            <p *ngIf="(birthYear.invalid && (birthYear.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+              <span *ngIf="birthYear.errors?.['required']">Năm sinh không được để trống</span>
+              <span *ngIf="birthYear.errors?.['max']">Năm sinh phải là ngày trong quá khứ</span>
+            </p>
           </div>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ *</label>
-          <input type="text" [(ngModel)]="selectedUser.address" name="address" required
+          <input type="text" #address="ngModel" [(ngModel)]="selectedUser.address" name="address" required maxlength="255"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+          <p *ngIf="(address.invalid && (address.touched || userForm.submitted))" class="text-xs text-red-600 mt-1">
+            <span *ngIf="address.errors?.['required']">Địa chỉ không được để trống</span>
+            <span *ngIf="address.errors?.['maxlength']">Địa chỉ không được quá 255 ký tự</span>
+          </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -187,6 +212,7 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none" />
             <!-- Dropdown để chọn role cho các trường hợp khác -->
             <select *ngIf="!isEditMode || !isSchoolAdmin()" 
+              #roleId="ngModel"
               [(ngModel)]="selectedUser.roleId" 
               name="roleId" 
               required
@@ -194,6 +220,7 @@
               <option value="0">Chọn role</option>
               <option *ngFor="let role of roles" [value]="role.id">{{ role.roleName }}</option>
             </select>
+            <p *ngIf="(userForm.submitted ) && selectedUser.roleId === 0" class="mt-1 text-xs text-red-600">Role không được để trống</p>
             <p *ngIf="isEditMode && isSchoolAdmin()" class="mt-1 text-xs text-gray-500">Role không thể thay đổi cho
               admin trường</p>
           </div>
