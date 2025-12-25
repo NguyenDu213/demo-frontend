@@ -11,7 +11,7 @@ import { Role } from '../../../models/role.model';
   selector: 'app-school-users',
   templateUrl: './users.html',
   styleUrls: ['./users.scss'],
-  standalone: false
+  standalone: false,
 })
 export class SchoolUsersComponent implements OnInit, OnDestroy {
   users: User[] = [];
@@ -43,10 +43,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     this.loadRoles();
 
     // Setup debounce cho search
-    this.searchSubject.pipe(
-      debounceTime(500),
-      distinctUntilChanged()
-    ).subscribe(() => {
+    this.searchSubject.pipe(debounceTime(500), distinctUntilChanged()).subscribe(() => {
       this.loadUsers();
     });
   }
@@ -58,7 +55,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   loadUsers(): void {
     this.isLoading = true;
     const schoolId = this.currentUser?.schoolId ?? undefined;
-    
+
     if (schoolId !== undefined) {
       this.userService.getUsers('School', schoolId).subscribe({
         next: (data) => {
@@ -66,31 +63,32 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
           this.roleService.getRoles('SCHOOL', schoolId).subscribe({
             next: (roles) => {
               // Filter bỏ các tài khoản admin trường (dựa trên roleName)
-              let filteredUsers = data.filter(user => {
-                const userRole = roles.find(r => r.id === user.roleId);
+              let filteredUsers = data.filter((user) => {
+                const userRole = roles.find((r) => r.id === user.roleId);
                 return userRole?.roleName !== 'SCHOOL_ADMIN';
               });
 
               // Filter theo search term nếu có
               if (this.searchTerm && this.searchTerm.trim()) {
                 const term = this.searchTerm.toLowerCase();
-                filteredUsers = filteredUsers.filter(user =>
-                  user.fullName.toLowerCase().includes(term) ||
-                  user.email.toLowerCase().includes(term) ||
-                  user.phoneNumber?.toLowerCase().includes(term)
+                filteredUsers = filteredUsers.filter(
+                  (user) =>
+                    user.fullName.toLowerCase().includes(term) ||
+                    user.email.toLowerCase().includes(term) ||
+                    user.phoneNumber?.toLowerCase().includes(term)
                 );
               }
 
               this.users = filteredUsers;
               this.isLoading = false;
               this.cdr.detectChanges();
-            }
+            },
           });
         },
         error: () => {
           this.isLoading = false;
           this.cdr.detectChanges();
-        }
+        },
       });
     } else {
       this.isLoading = false;
@@ -103,9 +101,9 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     this.roleService.getRoles('SCHOOL', schoolId).subscribe({
       next: (data) => {
         // Filter bỏ role "SCHOOL_ADMIN" - không cho phép chọn khi thêm user
-        this.roles = data.filter(role => role.roleName !== 'SCHOOL_ADMIN');
+        this.roles = data.filter((role) => role.roleName !== 'SCHOOL_ADMIN');
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -123,7 +121,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
       schoolId: this.currentUser?.schoolId || null,
       roleId: 0,
       createBy: this.currentUser?.id || 1,
-      updateBy: this.currentUser?.id || 1
+      updateBy: this.currentUser?.id || 1,
     };
   }
 
@@ -137,6 +135,10 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   openEditModal(user: User): void {
     this.isEditMode = true;
     this.selectedUser = { ...user };
+    if (this.selectedUser.birthYear) {
+      const date = new Date(this.selectedUser.birthYear);
+      this.selectedUser.birthYear = date.toISOString().split('T')[0];
+    }
     this.originalEmail = user.email; // Lưu email gốc
     this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
@@ -171,14 +173,14 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.selectedUser.id) {
       // Update updateBy với current user ID
       this.selectedUser.updateBy = currentUserId;
-      
+
       // Khi sửa, không cho phép thay đổi email và password
       // Giữ nguyên email gốc
       this.selectedUser.email = this.originalEmail;
       // Không gửi password khi update (để giữ nguyên password hiện tại)
       const userToUpdate = { ...this.selectedUser };
       delete userToUpdate.password;
-      
+
       this.userService.updateUser(this.selectedUser.id, userToUpdate).subscribe({
         next: () => {
           this.isSaving = false;
@@ -191,13 +193,13 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
           console.error('Lỗi khi cập nhật tài khoản:', err);
           this.handleBackendError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
     } else {
       // Set createBy và updateBy khi tạo mới
       this.selectedUser.createBy = currentUserId;
       this.selectedUser.updateBy = currentUserId;
-      
+
       this.userService.createUser(this.selectedUser).subscribe({
         next: () => {
           this.isSaving = false;
@@ -207,18 +209,27 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.isSaving = false;
+          this.validateRoleFrontend();
           console.error('Lỗi khi tạo tài khoản:', err);
           this.handleBackendError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
     }
   }
 
   private handleBackendError(err: any): void {
     const errorBody = err.error;
-    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
-      this.fieldErrors = errorBody.data;
+    if (
+      errorBody &&
+      errorBody.data &&
+      typeof errorBody.data === 'object' &&
+      !Array.isArray(errorBody.data)
+    ) {
+      this.fieldErrors = {
+        ...this.fieldErrors, // giữ lỗi frontend (role)
+        ...errorBody.data, // thêm lỗi backend
+      };
       console.log('Phát hiện lỗi Validation:', this.fieldErrors);
       // Không hiển thị alert khi có validation errors, chỉ hiển thị trên form
       return;
@@ -232,12 +243,20 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     }
   }
 
+  validateRoleFrontend(): void {
+    if (!this.selectedUser.roleId || this.selectedUser.roleId === 0) {
+      this.fieldErrors['roleId'] = 'Role phải được chọn';
+    } else {
+      delete this.fieldErrors['roleId'];
+    }
+  }
+
   deleteUser(id: number): void {
     if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
       this.userService.deleteUser(id).subscribe({
         next: () => {
           this.loadUsers();
-        }
+        },
       });
     }
   }
@@ -255,8 +274,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   }
 
   getRoleName(roleId: number): string {
-    const role = this.roles.find(r => r.id === roleId);
+    const role = this.roles.find((r) => r.id === roleId);
     return role ? role.roleName : 'N/A';
   }
 }
-
