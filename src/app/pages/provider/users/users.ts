@@ -14,7 +14,7 @@ import { School } from '../../../models/school.model';
   selector: 'app-provider-users',
   templateUrl: './users.html',
   styleUrls: ['./users.scss'],
-  standalone: false
+  standalone: false,
 })
 export class ProviderUsersComponent implements OnInit, OnDestroy {
   users: User[] = [];
@@ -42,7 +42,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userContextService: UserContextService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     // Khởi tạo selectedUser sau khi service đã được inject
@@ -50,13 +50,9 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     this.loadUsers();
     this.loadRoles();
     this.loadAllRoles(); // Load tất cả roles để hiển thị role name
-    this.loadSchools();
 
     // Setup debounce cho search
-    this.searchSubject.pipe(
-      debounceTime(500),
-      distinctUntilChanged()
-    ).subscribe(() => {
+    this.searchSubject.pipe(debounceTime(500), distinctUntilChanged()).subscribe(() => {
       this.loadUsers();
     });
   }
@@ -65,24 +61,16 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     this.searchSubject.complete();
   }
 
-  loadSchools(): void {
-    this.schoolService.getAllSchools().subscribe({
-      next: (data) => {
-        this.schools = data;
-        this.cdr.detectChanges();
-      }
-    });
-  }
 
   getSchoolName(schoolId: number | null | undefined): string {
     if (!schoolId) return 'N/A';
-    const school = this.schools.find(s => s.id === schoolId);
+    const school = this.schools.find((s) => s.id === schoolId);
     return school ? school.name : 'N/A';
   }
 
   isSchoolAdmin(): boolean {
     // Check dựa trên roleName thay vì roleId
-    const role = this.allRoles.find(r => r.id === this.selectedUser.roleId);
+    const role = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
     return role?.roleName === 'SCHOOL_ADMIN' || false;
   }
 
@@ -103,41 +91,44 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
             this.roleService.getRoles('SCHOOL').subscribe({
               next: (schoolRoles) => {
                 const allRoles = [...providerRoles, ...schoolRoles];
-                
+
                 // Filter users dựa trên roleName thay vì roleId
-                let filteredUsers = data.filter(user => {
-                  const userRole = allRoles.find(r => r.id === user.roleId);
+                let filteredUsers = data.filter((user) => {
+                  const userRole = allRoles.find((r) => r.id === user.roleId);
                   if (!userRole) return false;
-                  
+
                   // Chỉ hiển thị:
                   // 1. Tài khoản hệ thống (scope = PROVIDER, không phải SYSTEM_ADMIN)
                   // 2. Tài khoản admin school (SCHOOL_ADMIN)
-                  return (user.scope === 'PROVIDER' && userRole.roleName !== 'SYSTEM_ADMIN') 
-                      || userRole.roleName === 'SCHOOL_ADMIN';
+                  return (
+                    (user.scope === 'PROVIDER' && userRole.roleName !== 'SYSTEM_ADMIN') ||
+                    userRole.roleName === 'SCHOOL_ADMIN'
+                  );
                 });
 
                 // Filter theo search term nếu có
                 if (this.searchTerm && this.searchTerm.trim()) {
                   const term = this.searchTerm.toLowerCase();
-                  filteredUsers = filteredUsers.filter(user =>
-                    user.fullName.toLowerCase().includes(term) ||
-                    user.email.toLowerCase().includes(term) ||
-                    user.phoneNumber?.toLowerCase().includes(term)
+                  filteredUsers = filteredUsers.filter(
+                    (user) =>
+                      user.fullName.toLowerCase().includes(term) ||
+                      user.email.toLowerCase().includes(term) ||
+                      user.phoneNumber?.toLowerCase().includes(term)
                   );
                 }
-                
+
                 this.users = filteredUsers;
                 this.isLoading = false;
                 this.cdr.detectChanges();
-              }
+              },
             });
-          }
+          },
         });
       },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -146,9 +137,9 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     this.roleService.getRoles('PROVIDER').subscribe({
       next: (providerRoles) => {
         // Filter bỏ role "SYSTEM_ADMIN" - không cho phép chọn khi thêm user
-        this.roles = providerRoles.filter(role => role.roleName !== 'SYSTEM_ADMIN');
+        this.roles = providerRoles.filter((role) => role.roleName !== 'SYSTEM_ADMIN');
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -161,17 +152,18 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
         this.roleService.getRoles('SCHOOL').subscribe({
           next: (schoolRoles) => {
             // Thêm SCHOOL_ADMIN role vào allRoles
-            const schoolAdminRole = schoolRoles.find(r => r.roleName === 'SCHOOL_ADMIN' && r.schoolId === null);
-            if (schoolAdminRole && !this.allRoles.find(r => r.id === schoolAdminRole.id)) {
+            const schoolAdminRole = schoolRoles.find(
+              (r) => r.roleName === 'SCHOOL_ADMIN' && r.schoolId === null
+            );
+            if (schoolAdminRole && !this.allRoles.find((r) => r.id === schoolAdminRole.id)) {
               this.allRoles.push(schoolAdminRole);
             }
             this.cdr.detectChanges();
-          }
+          },
         });
-      }
+      },
     });
   }
-
 
   getEmptyUser(): User {
     // Sử dụng fallback nếu userContextService chưa được inject (trong property initializer)
@@ -188,7 +180,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
       scope: Scope.PROVIDER,
       roleId: 0,
       createBy: currentUserId,
-      updateBy: currentUserId
+      updateBy: currentUserId,
     };
   }
 
@@ -202,19 +194,25 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
   openEditModal(user: User): void {
     this.isEditMode = true;
     this.selectedUser = { ...user };
+    if (this.selectedUser.birthYear) {
+      const date = new Date(this.selectedUser.birthYear);
+      this.selectedUser.birthYear = date.toISOString().split('T')[0];
+    }
     this.originalEmail = user.email; // Lưu email gốc
     this.fieldErrors = {}; // Reset lỗi cũ
 
     // Nếu là admin trường, load thêm SCHOOL_ADMIN role vào danh sách
-    const userRole = this.allRoles.find(r => r.id === user.roleId);
+    const userRole = this.allRoles.find((r) => r.id === user.roleId);
     if (userRole?.roleName === 'SCHOOL_ADMIN') {
       this.roleService.getRoles('SCHOOL').subscribe({
         next: (schoolRoles) => {
-          const schoolAdminRole = schoolRoles.find(r => r.roleName === 'SCHOOL_ADMIN' && r.schoolId === null);
-          if (schoolAdminRole && !this.roles.find(r => r.id === schoolAdminRole.id)) {
+          const schoolAdminRole = schoolRoles.find(
+            (r) => r.roleName === 'SCHOOL_ADMIN' && r.schoolId === null
+          );
+          if (schoolAdminRole && !this.roles.find((r) => r.id === schoolAdminRole.id)) {
             this.roles = [...this.roles, schoolAdminRole];
           }
-        }
+        },
       });
     }
 
@@ -251,9 +249,9 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     if (this.isEditMode && this.selectedUser.id) {
       // Update updateBy với current user ID
       this.selectedUser.updateBy = currentUserId;
-      
+
       // Kiểm tra xem user có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
-      const userRole = this.allRoles.find(r => r.id === this.selectedUser.roleId);
+      const userRole = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
       const isSystemAdmin = userRole?.roleName === 'SYSTEM_ADMIN';
       const isSchoolAdmin = userRole?.roleName === 'SCHOOL_ADMIN';
 
@@ -277,7 +275,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
             console.error('Lỗi khi cập nhật người dùng:', err);
             this.handleBackendError(err);
             this.cdr.detectChanges();
-          }
+          },
         });
       } else {
         // Admin hệ thống và admin trường có thể sửa tất cả
@@ -293,14 +291,13 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
             console.error('Lỗi khi cập nhật người dùng:', err);
             this.handleBackendError(err);
             this.cdr.detectChanges();
-          }
+          },
         });
       }
     } else {
       // Set createBy và updateBy khi tạo mới
       this.selectedUser.createBy = currentUserId;
       this.selectedUser.updateBy = currentUserId;
-      
       this.userService.createUser(this.selectedUser).subscribe({
         next: () => {
           this.isSaving = false;
@@ -312,8 +309,9 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
           this.isSaving = false;
           console.error('Lỗi khi tạo người dùng:', err);
           this.handleBackendError(err);
+          this.validateRoleFrontend();
           this.cdr.detectChanges();
-        }
+        },
       });
     }
   }
@@ -323,7 +321,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
       this.userService.deleteUser(id).subscribe({
         next: () => {
           this.loadUsers();
-        }
+        },
       });
     }
   }
@@ -342,20 +340,28 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
 
   isAdminUser(): boolean {
     // Kiểm tra xem user đang edit có phải admin hệ thống hoặc admin trường không (dựa trên roleName)
-    const role = this.allRoles.find(r => r.id === this.selectedUser.roleId);
+    const role = this.allRoles.find((r) => r.id === this.selectedUser.roleId);
     return role?.roleName === 'SYSTEM_ADMIN' || role?.roleName === 'SCHOOL_ADMIN' || false;
   }
 
   getRoleName(roleId: number): string {
     // Tìm trong allRoles để bao gồm cả PROVIDER và SCHOOL roles
-    const role = this.allRoles.find(r => r.id === roleId);
+    const role = this.allRoles.find((r) => r.id === roleId);
     return role ? role.roleName : 'N/A';
   }
 
   private handleBackendError(err: any): void {
     const errorBody = err.error;
-    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
-      this.fieldErrors = errorBody.data;
+    if (
+      errorBody &&
+      errorBody.data &&
+      typeof errorBody.data === 'object' &&
+      !Array.isArray(errorBody.data)
+    ) {
+      this.fieldErrors = {
+        ...this.fieldErrors, // giữ lỗi frontend (role)
+        ...errorBody.data, // thêm lỗi backend
+      };
       console.log('Phát hiện lỗi Validation:', this.fieldErrors);
     } else if (errorBody && errorBody.message) {
       alert(errorBody.message);
@@ -363,5 +369,12 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
       alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
     }
   }
-}
 
+  validateRoleFrontend(): void {
+    if (!this.selectedUser.roleId || this.selectedUser.roleId === 0) {
+      this.fieldErrors['roleId'] = 'Role phải được chọn';
+    } else {
+      delete this.fieldErrors['roleId'];
+    }
+  }
+}
