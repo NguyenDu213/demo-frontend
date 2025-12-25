@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { School } from '../models/school.model';
 import { ApiResponse } from '../models/auth.model';
+import {PageResponse} from '../models/page-response.model';
 
 @Injectable({
   providedIn: 'root'
@@ -27,24 +28,45 @@ export class SchoolService {
   }
 
   // Lấy danh sách trường
-  getAllSchools(): Observable<School[]> {
-    console.log('[API Request] GET /schools');
-    return this.http.get<ApiResponse<School[]>>(this.apiUrl, { headers: this.getHeaders() })
-      .pipe(
-        tap(response => console.log('[API Response] GET /schools:', response)),
-        map(response => response.data) // Bóc tách lấy data thật
-      );
-  }
+  getAllSchools(page: number, size: number): Observable<PageResponse<School>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
 
-  // Tìm kiếm trường
-  searchSchools(name: string): Observable<School[]> {
-    const params = new HttpParams().set('name', name);
-    console.log('[API Request] GET /schools/search param:', name);
-    return this.http.get<ApiResponse<School[]>>(`${this.apiUrl}/search`, {
+    console.log(`[API Request] GET /schools page=${page}, size=${size}`);
+
+    return this.http.get<ApiResponse<PageResponse<School>>>(this.apiUrl, {
       headers: this.getHeaders(),
       params: params
     }).pipe(
-      tap(response => console.log('[API Response] Search:', response)),
+      map(response => response.data)
+    );
+  }
+
+  // Tìm kiếm trường
+  searchSchools(name: string, page: number, size: number): Observable<PageResponse<School>> {
+    const params = new HttpParams()
+      .set('name', name)
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    console.log(`[API Request] GET /schools/search param=${name}, page=${page}`);
+
+    return this.http.get<ApiResponse<PageResponse<School>>>(`${this.apiUrl}/search`, {
+      headers: this.getHeaders(),
+      params: params
+    }).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Lấy chi tiết trường theo ID
+  getSchoolById(id: number): Observable<School> {
+    console.log(`[API Request] GET /schools/${id}`);
+    return this.http.get<ApiResponse<School>>(`${this.apiUrl}/${id}`, {
+      headers: this.getHeaders()
+    }).pipe(
+      tap(response => console.log(`[API Response] GET /schools/${id}:`, response)),
       map(response => response.data)
     );
   }
