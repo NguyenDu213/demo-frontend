@@ -151,8 +151,8 @@ export class RoleService {
    * Backend expects: POST /api/roles
    */
   createRole(role: Role): Observable<Role> {
-    // Convert Role to backend format (remove id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName)
-    const { id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName, ...roleRequest } = role as any;
+    // Convert Role to backend format (remove id, createdAt, updatedAt, userCount, schoolName)
+    const { id, createdAt, updatedAt, userCount, schoolName, ...roleRequest } = role as any;
 
     console.log('[API Request] POST /roles Payload:', roleRequest);
     return this.http.post<ApiResponse<Role>>(`${this.apiUrl}/roles`, roleRequest, { headers: this.getHeaders() })
@@ -177,8 +177,8 @@ export class RoleService {
    * Backend expects: PUT /api/roles/{id}
    */
   updateRole(id: number, role: Role): Observable<Role> {
-    // Convert Role to backend format (remove id, createdAt, updatedAt, createBy, updateBy, userCount, schoolName)
-    const { id: roleId, createdAt, updatedAt, createBy, updateBy, userCount, schoolName, ...roleRequest } = role as any;
+    // Convert Role to backend format (remove id, createdAt, updatedAt, userCount, schoolName)
+    const { id: roleId, createdAt, updatedAt, userCount, schoolName, ...roleRequest } = role as any;
 
     console.log(`[API Request] PUT /roles/${id} Payload:`, roleRequest);
     return this.http.put<ApiResponse<Role>>(`${this.apiUrl}/roles/${id}`, roleRequest, { headers: this.getHeaders() })
