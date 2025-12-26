@@ -505,24 +505,145 @@ export class ProviderUsersComponent implements OnInit {
     return role ? role.roleName : 'N/A';
   }
 
+  /**
+   * Xử lý chi tiết các lỗi từ backend
+   * Tương tự như handleBackendError trong roles component
+   */
   private handleBackendError(err: any): void {
-    const errorBody = err.error;
-    if (
-      errorBody &&
-      errorBody.data &&
-      typeof errorBody.data === 'object' &&
-      !Array.isArray(errorBody.data)
-    ) {
-      this.fieldErrors = {
-        ...this.fieldErrors, // giữ lỗi frontend (role)
-        ...errorBody.data, // thêm lỗi backend
-      };
-      console.log('Phát hiện lỗi Validation:', this.fieldErrors);
-    } else if (errorBody && errorBody.message) {
-      alert(errorBody.message);
-    } else {
-      alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
+    console.log('handleBackendError called with:', err);
+    
+    const errorBody = err.error || {};
+    const statusCode = err.status || errorBody.statusCode || 500;
+    const errorMessage = errorBody.message || err.message || 'Đã xảy ra lỗi không xác định';
+    
+    console.log('Error details:', {
+      statusCode,
+      message: errorMessage,
+      errorBody,
+      fullError: err
+    });
+
+    // ============================================================
+    // 1. XỬ LÝ VALIDATION ERRORS (400) - Field-level errors
+    // ============================================================
+    if (errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
+      const dataKeys = Object.keys(errorBody.data);
+      
+      const hasFieldErrors = dataKeys.some(key => {
+        const value = errorBody.data[key];
+        return key !== 'message' && typeof value === 'string' && value.trim().length > 0;
+      });
+
+      if (hasFieldErrors) {
+        const fieldErrorsMap: { [key: string]: string } = {};
+        dataKeys.forEach(key => {
+          const value = errorBody.data[key];
+          if (key !== 'message' && typeof value === 'string' && value.trim().length > 0) {
+            fieldErrorsMap[key] = value;
+          }
+        });
+
+        if (Object.keys(fieldErrorsMap).length > 0) {
+          this.fieldErrors = {
+            ...this.fieldErrors, // giữ lỗi frontend (role)
+            ...fieldErrorsMap, // thêm lỗi backend
+          };
+          console.log('Phát hiện lỗi Validation (field-level):', this.fieldErrors);
+          return;
+        }
+      }
     }
+
+    // ============================================================
+    // 2. XỬ LÝ CÁC LOẠI LỖI BUSINESS LOGIC THEO STATUS CODE
+    // ============================================================
+    
+    if (statusCode === 401) {
+      const message = this.extractErrorMessage(errorMessage, [
+        'Vui lòng đăng nhập',
+        'Authentication Error',
+        'Token không hợp lệ',
+        'Token đã hết hạn'
+      ]);
+      alert(message);
+      return;
+    }
+
+    if (statusCode === 403) {
+      const message = this.extractErrorMessage(errorMessage, [
+        'Bạn không có quyền',
+        'Truy cập bị từ chối',
+        'Forbidden'
+      ]);
+      alert(`❌ Lỗi quyền truy cập:\n${message}`);
+      return;
+    }
+
+    if (statusCode === 404) {
+      const message = this.extractErrorMessage(errorMessage, [
+        'Không tìm thấy',
+        'Resource Not Found'
+      ]);
+      alert(`⚠️ Không tìm thấy:\n${message}`);
+      return;
+    }
+
+    if (statusCode === 409) {
+      const message = this.extractErrorMessage(errorMessage, [
+        'Dữ liệu đã tồn tại',
+        'Vi phạm ràng buộc',
+        'Data Integrity Violation',
+        'Conflict'
+      ]);
+      alert(`⚠️ Xung đột dữ liệu:\n${message}`);
+      return;
+    }
+
+    if (statusCode === 400) {
+      const message = this.extractErrorMessage(errorMessage, [
+        'Bad Request',
+        'Dữ liệu không hợp lệ'
+      ]);
+      alert(`⚠️ Lỗi dữ liệu:\n${message}`);
+      return;
+    }
+
+    if (statusCode >= 500) {
+      console.error('Server error:', errorMessage);
+      alert(`❌ Lỗi máy chủ:\nĐã xảy ra lỗi không mong đợi. Vui lòng thử lại sau.\n\nChi tiết: ${errorMessage}`);
+      return;
+    }
+
+    // ============================================================
+    // 3. FALLBACK: Xử lý các lỗi khác
+    // ============================================================
+    if (errorBody.message) {
+      console.log('Hiển thị alert với message từ backend:', errorBody.message);
+      alert(`⚠️ ${errorBody.message}`);
+    } else if (errorMessage) {
+      console.log('Hiển thị alert với error message:', errorMessage);
+      alert(`⚠️ ${errorMessage}`);
+    } else {
+      console.log('Lỗi không xác định');
+      alert('❌ Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
+    }
+  }
+
+  /**
+   * Trích xuất thông điệp lỗi từ error message
+   */
+  private extractErrorMessage(message: string, keywords: string[]): string {
+    if (!message) {
+      return 'Đã xảy ra lỗi không xác định';
+    }
+
+    for (const keyword of keywords) {
+      if (message.toLowerCase().includes(keyword.toLowerCase())) {
+        return message;
+      }
+    }
+
+    return message;
   }
 
   validateRoleFrontend(): void {

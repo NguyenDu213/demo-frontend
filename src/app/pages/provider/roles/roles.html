@@ -153,18 +153,44 @@
       </div>
 
       <form (ngSubmit)="saveRole()" #roleForm="ngForm" class="space-y-4">
+        <!-- Hiển thị lỗi validation tổng quát (nếu có) -->
+        <div *ngIf="hasGeneralErrors()" 
+          class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            <div class="flex-1">
+              <h4 class="text-sm font-semibold text-red-800 mb-2">Có lỗi validation:</h4>
+              <ul class="list-disc list-inside space-y-1 text-sm text-red-700">
+                <li *ngFor="let error of getGeneralErrors()">{{ error }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Tên Role <span class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Tên Role <span class="text-red-500">*</span>
+            <span class="text-xs font-normal text-gray-500 ml-2">
+              ({{ (selectedRole.roleName || '').length }}/50 ký tự)
+            </span>
+          </label>
           <input type="text" [(ngModel)]="selectedRole.roleName" name="roleName" required minlength="2" maxlength="50"
+            pattern="^[A-Z0-9_]+$"
             #roleNameModel="ngModel"
             (input)="clearError('roleName')"
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+            class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all font-mono"
             [class.border-red-500]="(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName']"
             [class.focus:ring-red-200]="(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName']"
             [class.border-gray-300]="!((roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName'])"
             [class.focus:ring-blue-500]="!((roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName'])" />
           <app-error-message [control]="roleNameModel" label="Tên Role" [backendError]="fieldErrors['roleName']"></app-error-message>
-          <p *ngIf="!fieldErrors['roleName'] && !(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched))" class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Quản trị viên" → "QUAN_TRI_VIEN"</p>
+          <p *ngIf="!fieldErrors['roleName'] && !(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched))" 
+            class="mt-1 text-xs text-gray-500">
+            Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). 
+            Ví dụ: "Quản trị viên" → "QUAN_TRI_VIEN". Tên role phải từ 2 đến 50 ký tự.
+          </p>
         </div>
 
         <div>
@@ -175,16 +201,25 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Mô tả <span class="text-red-500">*</span></label>
-          <textarea [(ngModel)]="selectedRole.description" name="description" required rows="4" minlength="5" maxlength="200"
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Mô tả <span class="text-red-500">*</span>
+            <span class="text-xs font-normal text-gray-500 ml-2">
+              ({{ (selectedRole.description || '').length }}/500 ký tự)
+            </span>
+          </label>
+          <textarea [(ngModel)]="selectedRole.description" name="description" required rows="4" minlength="5" maxlength="500"
             #descriptionModel="ngModel"
             (input)="clearError('description')"
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+            class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all resize-y"
             [class.border-red-500]="(descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description']"
             [class.focus:ring-red-200]="(descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description']"
             [class.border-gray-300]="!((descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description'])"
             [class.focus:ring-blue-500]="!((descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description'])"></textarea>
           <app-error-message [control]="descriptionModel" label="Mô tả" [backendError]="fieldErrors['description']"></app-error-message>
+          <p *ngIf="!fieldErrors['description'] && !(descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched))" 
+            class="mt-1 text-xs text-gray-500">
+            Mô tả phải từ 5 đến 500 ký tự để giải thích rõ ràng về vai trò và quyền hạn của role này.
+          </p>
         </div>
 
         <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100 mt-6">

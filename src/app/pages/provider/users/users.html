@@ -6,7 +6,7 @@
       <p class="text-gray-600">Quản lý tài khoản nhân viên hệ thống</p>
     </div>
     <button (click)="openAddModal()"
-            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+      class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
       + Thêm tài khoản
     </button>
   </div>
@@ -15,22 +15,21 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
-         <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên..."
-           (keyup.enter)="onSearchChange()"
-               class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên..." (keyup.enter)="onSearchChange()"
+          class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
         <button type="button" (click)="onSearchChange()"
-                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </button>
       </div>
       <button type="button" (click)="onSearchChange()"
-              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
         Tìm kiếm
       </button>
@@ -46,60 +45,58 @@
     <div *ngIf="!isLoading" class="overflow-x-auto">
       <table class="w-full">
         <thead class="bg-gray-50 border-b border-gray-200">
-        <tr>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Họ tên</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Số điện thoại</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Giới tính</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Role</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Trạng thái</th>
-          <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Thao tác</th>
-        </tr>
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Họ tên</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Số điện thoại</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Giới tính</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Role</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Trạng thái</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Thao tác</th>
+          </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-        <tr *ngFor="let user of filteredUsers" class="hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ user.fullName }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600">{{ user.phoneNumber }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600">{{ isGender(user.gender) }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600">{{ getRoleName(user.roleId) }}</td>
-          <td class="px-6 py-4 text-sm">
+          <tr *ngFor="let user of filteredUsers" class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ user.fullName }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ user.phoneNumber }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ isGender(user.gender) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ getRoleName(user.roleId) }}</td>
+            <td class="px-6 py-4 text-sm">
               <span
                 [class]="user.isActive ? 'px-2 py-1 bg-green-100 text-green-700 rounded' : 'px-2 py-1 bg-red-100 text-red-700 rounded'">
                 {{ user.isActive ? 'Hoạt động' : 'Không hoạt động' }}
               </span>
-          </td>
-          <td class="px-6 py-4 text-sm">
-            <div class="flex items-center space-x-2">
-              <button (click)="openEditModal(user)"
-                      class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
-                Sửa
-              </button>
-              <button (click)="deleteUser(user.id!)"
-                      class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
-                Xóa
-              </button>
-            </div>
-          </td>
-        </tr>
-        <tr *ngIf="filteredUsers.length === 0 && !isLoading">
-          <td colspan="7" class="px-6 py-8 text-center text-gray-500">Không có dữ liệu</td>
-        </tr>
+            </td>
+            <td class="px-6 py-4 text-sm">
+              <div class="flex items-center space-x-2">
+                <button (click)="openEditModal(user)"
+                  class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                  Sửa
+                </button>
+                <button (click)="deleteUser(user.id!)"
+                  class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
+                  Xóa
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0 && !isLoading">
+            <td colspan="7" class="px-6 py-8 text-center text-gray-500">Không có dữ liệu</td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-<div  class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6 rounded-b-lg shadow-sm">
+  <div
+    class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6 rounded-b-lg shadow-sm">
     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
       <div class="flex items-center gap-2">
         <span class="text-sm text-gray-700">Hiển thị</span>
 
         <div class="relative">
-          <select
-            name="pageSize"
-            [(ngModel)]="pageSize"
-            (change)="onPageSizeChange()"
+          <select name="pageSize" [(ngModel)]="pageSize" (change)="onPageSizeChange()"
             class="appearance-none bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1.5 pr-6 outline-none cursor-pointer transition-all hover:border-blue-400">
             <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
           </select>
@@ -119,209 +116,220 @@
       <div>
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
           <button (click)="prevPage()" [disabled]="currentPage===1"
-                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="sr-only">Previous</span>
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
             </svg>
           </button>
 
           <button *ngFor="let p of pages" (click)="goToPage(p)"
-                  [class]="'relative inline-flex items-center px-4 py-2 border text-sm font-medium hover:bg-gray-50 ' + (p===currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300')">
+            [class]="'relative inline-flex items-center px-4 py-2 border text-sm font-medium hover:bg-gray-50 ' + (p===currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300')">
             {{ p }}
           </button>
 
           <button (click)="nextPage()" [disabled]="currentPage===totalPages"
-                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="sr-only">Next</span>
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd" />
             </svg>
           </button>
         </nav>
       </div>
     </div>
 
-  <!-- Modal -->
-  <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-       (click)="closeModal()">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto"
-         (click)="$event.stopPropagation()">
-      <h2 class="text-2xl font-bold text-gray-800 mb-6">
-        {{ isEditMode ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới' }}
-      </h2>
+    <!-- Modal -->
+    <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      (click)="closeModal()">
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto"
+        (click)="$event.stopPropagation()">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+          {{ isEditMode ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới' }}
+        </h2>
 
-      <div *ngIf="hasBackendErrors()" class="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-        <p *ngFor="let e of backendErrorList()" class="text-red-600 text-sm">{{ e }}</p>
-      </div>
-
-      <!-- Hiển thị tên trường nếu là admin trường -->
-      <div *ngIf="isEditMode && isSchoolAdmin()" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p class="text-sm font-medium text-blue-800">
-          <span class="font-semibold">Trường học:</span> {{ getSchoolName(selectedUser.schoolId) }}
-        </p>
-      </div>
-
-      <form (ngSubmit)="saveUser()" #userForm="ngForm" class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên *</label>
-            <input type="text" [(ngModel)]="selectedUser.fullName" name="fullName" required minlength="3" maxlength="255"
-                   #fullNameModel="ngModel"
-                   (input)="clearError('fullName')"
-                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                   [class.border-red-500]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
-                   [class.focus:ring-red-200]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
-                   [class.border-gray-300]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])"
-                   [class.focus:ring-blue-500]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])" />
-            <app-error-message [control]="fullNameModel" label="Họ tên" [backendError]="fieldErrors['fullName']"></app-error-message>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-            <input type="email" [(ngModel)]="selectedUser.email" name="email" [required]="!isEditMode || isAdminUser()" email maxlength="100"
-                   #emailModel="ngModel"
-                   [disabled]="isEditMode && !isAdminUser()"
-                   (input)="clearError('email')"
-                   [class]="'w-full px-4 py-2 border rounded-lg outline-none transition-all ' + (isEditMode && !isAdminUser() ? 'bg-gray-100 text-gray-600 cursor-not-allowed ' : '')"
-                   [class.border-red-500]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
-                   [class.focus:ring-red-200]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
-                   [class.border-gray-300]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])"
-                   [class.focus:ring-blue-500]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])" />
-            <app-error-message [control]="emailModel" label="Email" [backendError]="fieldErrors['email']"></app-error-message>
-            <p *ngIf="!fieldErrors['email'] && isEditMode && !isAdminUser()" class="mt-1 text-xs text-gray-500">Email không thể thay đổi</p>
-          </div>
+        <div *ngIf="hasBackendErrors()" class="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+          <p *ngFor="let e of backendErrorList()" class="text-red-600 text-sm">{{ e }}</p>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu *</label>
-            <div *ngIf="!isEditMode || isAdminUser()" class="relative">
-              <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="selectedUser.password" name="password"
-                #passwordModel="ngModel"
-                [required]="!isEditMode" minlength="6" maxlength="100"
-                required
-                (input)="clearError('password')"
-                class="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 outline-none transition-all"
-                [class.border-red-500]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
-                [class.focus:ring-red-200]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
-                [class.border-gray-300]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])"
-                [class.focus:ring-blue-500]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])" />
-              <button type="button" (click)="togglePasswordVisibility()"
-                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
-                <svg *ngIf="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                  </path>
-                </svg>
-                <svg *ngIf="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
-                  </path>
-                </svg>
-              </button>
-              <app-error-message [control]="passwordModel" label="Mật khẩu" [backendError]="fieldErrors['password']"></app-error-message>
+        <!-- Hiển thị tên trường nếu là admin trường -->
+        <div *ngIf="isEditMode && isSchoolAdmin()" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p class="text-sm font-medium text-blue-800">
+            <span class="font-semibold">Trường học:</span> {{ getSchoolName(selectedUser.schoolId) }}
+          </p>
+        </div>
+
+        <form (ngSubmit)="saveUser()" #userForm="ngForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên *</label>
+              <input type="text" [(ngModel)]="selectedUser.fullName" name="fullName" required minlength="2"
+                maxlength="100" pattern="^[a-zA-Z\s]+$" #fullNameModel="ngModel" (input)="clearError('fullName')"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                [class.border-red-500]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
+                [class.focus:ring-red-200]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
+                [class.border-gray-300]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])"
+                [class.focus:ring-blue-500]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])" />
+              <app-error-message [control]="fullNameModel" label="Họ tên"
+                [backendError]="fieldErrors['fullName']"></app-error-message>
+              <p *ngIf="!fieldErrors['fullName'] && !(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched))"
+                class="mt-1 text-xs text-gray-500">
+                Họ tên chỉ được chứa chữ cái (chữ hoa và chữ thường) và khoảng trắng. Không được chứa số, ký tự đặc biệt
+                hoặc dấu tiếng Việt. Ví dụ: "Nguyen Van A" - hợp lệ, "Nguyễn Văn A" - không hợp lệ.
+              </p>
             </div>
-            <div *ngIf="isEditMode && !isAdminUser()"
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-              <span class="text-sm">Mật khẩu không thể thay đổi</span>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <input type="email" [(ngModel)]="selectedUser.email" name="email"
+                [required]="!isEditMode || isAdminUser()" email maxlength="100" #emailModel="ngModel"
+                [disabled]="isEditMode && !isAdminUser()" (input)="clearError('email')"
+                [class]="'w-full px-4 py-2 border rounded-lg outline-none transition-all ' + (isEditMode && !isAdminUser() ? 'bg-gray-100 text-gray-600 cursor-not-allowed ' : '')"
+                [class.border-red-500]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+                [class.focus:ring-red-200]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+                [class.border-gray-300]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])"
+                [class.focus:ring-blue-500]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])" />
+              <app-error-message [control]="emailModel" label="Email"
+                [backendError]="fieldErrors['email']"></app-error-message>
+              <p *ngIf="!fieldErrors['email'] && isEditMode && !isAdminUser()" class="mt-1 text-xs text-gray-500">Email
+                không thể thay đổi</p>
             </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
-                 <input type="text" [(ngModel)]="selectedUser.phoneNumber" name="phoneNumber" required pattern="^(0|\+84)[0-9]{9,10}$" minlength="10" maxlength="11"
-                   #phoneModel="ngModel"
-                   (input)="clearError('phoneNumber')"
-                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                   [class.border-red-500]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
-                   [class.focus:ring-red-200]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
-                   [class.border-gray-300]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])"
-                   [class.focus:ring-blue-500]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])" />
-                 <app-error-message [control]="phoneModel" label="Số điện thoại" [backendError]="fieldErrors['phoneNumber']"></app-error-message>
-          </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Giới tính *</label>
-            <select [(ngModel)]="selectedUser.gender" name="gender" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-              <option *ngFor="let gender of genders" [value]="gender">{{isGender(gender)}}</option>
-            </select>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu *</label>
+              <div *ngIf="!isEditMode || isAdminUser()" class="relative">
+                <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="selectedUser.password" name="password"
+                  #passwordModel="ngModel" [required]="!isEditMode" minlength="6" maxlength="100" required
+                  (input)="clearError('password')"
+                  class="w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 outline-none transition-all"
+                  [class.border-red-500]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
+                  [class.focus:ring-red-200]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
+                  [class.border-gray-300]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])"
+                  [class.focus:ring-blue-500]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])" />
+                <button type="button" (click)="togglePasswordVisibility()"
+                  class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                  <svg *ngIf="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                    </path>
+                  </svg>
+                  <svg *ngIf="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21">
+                    </path>
+                  </svg>
+                </button>
+                <app-error-message [control]="passwordModel" label="Mật khẩu"
+                  [backendError]="fieldErrors['password']"></app-error-message>
+              </div>
+              <div *ngIf="isEditMode && !isAdminUser()"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                <span class="text-sm">Mật khẩu không thể thay đổi</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
+              <input type="text" [(ngModel)]="selectedUser.phoneNumber" name="phoneNumber" required
+                pattern="^0[0-9]{9}$" minlength="10" maxlength="10" #phoneModel="ngModel"
+                (input)="clearError('phoneNumber')"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                [class.border-red-500]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
+                [class.focus:ring-red-200]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
+                [class.border-gray-300]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])"
+                [class.focus:ring-blue-500]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])" />
+              <app-error-message [control]="phoneModel" label="Số điện thoại"
+                [backendError]="fieldErrors['phoneNumber']"></app-error-message>
+              <p *ngIf="!fieldErrors['phoneNumber'] && !(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched))"
+                class="mt-1 text-xs text-gray-500">
+                Số điện thoại chỉ được chứa số, bắt đầu bằng 0 và có 10 chữ số (ví dụ: 0123456789).
+              </p>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh *</label>
-            <input type="date" [(ngModel)]="selectedUser.birthYear" name="birthYear" required
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-            <p *ngIf="fieldErrors['birthYear']" class="text-red-500 text-xs mt-1">{{ fieldErrors['birthYear'] }}</p>
-          </div>
-        </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ *</label>
-          <input type="text" [(ngModel)]="selectedUser.address" name="address" 
-                 required
-                 minlength="3" maxlength="255"
-                 #addressModel="ngModel"
-                 (input)="clearError('address')"
-                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                   [class.border-red-500]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
-                   [class.focus:ring-red-200]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
-                   [class.border-gray-300]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])"
-                   [class.focus:ring-blue-500]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])" />
-          <app-error-message [control]="addressModel" label="Địa chỉ" [backendError]="fieldErrors['address']"></app-error-message>
-          <p *ngIf="fieldErrors['address']" class="text-red-500 text-xs mt-1">{{ fieldErrors['address'] }}</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
-            <!-- Hiển thị roleName nếu là admin trường -->
-            <input *ngIf="isEditMode && isSchoolAdmin()"
-                   type="text"
-                   [value]="getRoleName(selectedUser.roleId)"
-                   disabled
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none" />
-            <!-- Dropdown để chọn role cho các trường hợp khác -->
-            <select *ngIf="!isEditMode || !isSchoolAdmin()"
-                    [(ngModel)]="selectedUser.roleId"
-                    name="roleId"
-                    required
-                    (change)="clearError('roleId')"
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-                    [class.border-red-500]="fieldErrors['roleId']"
-                    [class.focus:ring-red-200]="fieldErrors['roleId']"
-                    [class.border-gray-300]="!fieldErrors['roleId']"
-                    [class.focus:ring-blue-500]="!fieldErrors['roleId']">
-              <option value="0">Chọn role</option>
-              <option *ngFor="let role of roles" [value]="role.id">{{ role.roleName }}</option>
-            </select>
-            <p *ngIf="fieldErrors['roleId']" class="text-red-500 text-xs mt-1">{{ fieldErrors['roleId'] }}</p>
-            <p *ngIf="isEditMode && isSchoolAdmin()" class="mt-1 text-xs text-gray-500">Role không thể thay đổi cho
-              admin trường</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Giới tính *</label>
+              <select [(ngModel)]="selectedUser.gender" name="gender" required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                <option *ngFor="let gender of genders" [value]="gender">{{isGender(gender)}}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Ngày sinh *</label>
+              <input type="date" [(ngModel)]="selectedUser.birthYear" name="birthYear" required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
+              <p *ngIf="fieldErrors['birthYear']" class="text-red-500 text-xs mt-1">{{ fieldErrors['birthYear'] }}</p>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-            <label class="flex items-center space-x-2 mt-2">
-              <input type="checkbox" [(ngModel)]="selectedUser.isActive" name="isActive"
-                     class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-              <span class="text-sm text-gray-700">Hoạt động</span>
-            </label>
-          </div>
-        </div>
 
-        <div class="flex justify-end space-x-4 pt-4">
-          <button type="button" (click)="closeModal()"
-                  class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            Hủy
-          </button>
-          <button type="submit" [disabled]="userForm.invalid || isSaving" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span *ngIf="!isSaving">Lưu</span>
-            <span *ngIf="isSaving">Đang lưu...</span>
-          </button>
-        </div>
-      </form>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Địa chỉ *</label>
+            <input type="text" [(ngModel)]="selectedUser.address" name="address" required minlength="3" maxlength="255"
+              pattern="^[a-zA-Z0-9\s/,.-]+$" #addressModel="ngModel" (input)="clearError('address')"
+              class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+              [class.border-red-500]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+              [class.focus:ring-red-200]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+              [class.border-gray-300]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])"
+              [class.focus:ring-blue-500]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])" />
+            <app-error-message [control]="addressModel" label="Địa chỉ"
+              [backendError]="fieldErrors['address']"></app-error-message>
+            <p *ngIf="!fieldErrors['address'] && !(addressModel.invalid && (addressModel.dirty || addressModel.touched))"
+              class="mt-1 text-xs text-gray-500">
+              Địa chỉ chỉ được chứa chữ cái, số, khoảng trắng và các ký tự: / , . -
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+              <!-- Hiển thị roleName nếu là admin trường -->
+              <input *ngIf="isEditMode && isSchoolAdmin()" type="text" [value]="getRoleName(selectedUser.roleId)"
+                disabled
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none" />
+              <!-- Dropdown để chọn role cho các trường hợp khác -->
+              <select *ngIf="!isEditMode || !isSchoolAdmin()" [(ngModel)]="selectedUser.roleId" name="roleId" required
+                (change)="clearError('roleId')"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                [class.border-red-500]="fieldErrors['roleId']" [class.focus:ring-red-200]="fieldErrors['roleId']"
+                [class.border-gray-300]="!fieldErrors['roleId']" [class.focus:ring-blue-500]="!fieldErrors['roleId']">
+                <option value="0">Chọn role</option>
+                <option *ngFor="let role of roles" [value]="role.id">{{ role.roleName }}</option>
+              </select>
+              <p *ngIf="fieldErrors['roleId']" class="text-red-500 text-xs mt-1">{{ fieldErrors['roleId'] }}</p>
+              <p *ngIf="isEditMode && isSchoolAdmin()" class="mt-1 text-xs text-gray-500">Role không thể thay đổi cho
+                admin trường</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+              <label class="flex items-center space-x-2 mt-2">
+                <input type="checkbox" [(ngModel)]="selectedUser.isActive" name="isActive"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <span class="text-sm text-gray-700">Hoạt động</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-4 pt-4">
+            <button type="button" (click)="closeModal()"
+              class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              Hủy
+            </button>
+            <button type="submit" [disabled]="userForm.invalid || isSaving"
+              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <span *ngIf="!isSaving">Lưu</span>
+              <span *ngIf="isSaving">Đang lưu...</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
