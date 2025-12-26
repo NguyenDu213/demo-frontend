@@ -49,9 +49,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Quản trị viên hệ thống, có toàn quyền quản lý',
         schoolId: null,
         createdAt: '2024-01-01T08:00:00',
-        updatedAt: '2024-01-01T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-01T08:00:00'
     },
     {
         id: 2,
@@ -60,9 +58,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Nhân viên hệ thống, quản lý các trường học',
         schoolId: null,
         createdAt: '2024-01-01T08:00:00',
-        updatedAt: '2024-01-01T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-01T08:00:00'
     },
     // School Roles
     {
@@ -72,9 +68,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Quản trị viên trường học',
         schoolId: null,
         createdAt: '2024-01-01T08:00:00',
-        updatedAt: '2024-01-01T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-01T08:00:00'
     },
     {
         id: 4,
@@ -83,9 +77,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Giáo viên',
         schoolId: 1,
         createdAt: '2024-01-15T08:00:00',
-        updatedAt: '2024-01-15T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-15T08:00:00'
     },
     {
         id: 5,
@@ -94,9 +86,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Học sinh',
         schoolId: 1,
         createdAt: '2024-01-15T08:00:00',
-        updatedAt: '2024-01-15T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-15T08:00:00'
     },
     {
         id: 6,
@@ -105,9 +95,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Giáo viên',
         schoolId: 2,
         createdAt: '2024-01-20T08:00:00',
-        updatedAt: '2024-01-20T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-20T08:00:00'
     },
     {
         id: 7,
@@ -116,9 +104,7 @@ export const MOCK_ROLES: Role[] = [
         description: 'Học sinh',
         schoolId: 2,
         createdAt: '2024-01-20T08:00:00',
-        updatedAt: '2024-01-20T08:00:00',
-        createBy: 1,
-        updateBy: 1
+        updatedAt: '2024-01-20T08:00:00'
     }
 ];
 

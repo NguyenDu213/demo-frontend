@@ -474,7 +474,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     private recomputePagination(): void {
       this.totalItems = this.users.length;
       this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.pageSize));
-      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages; 
     }
 
 

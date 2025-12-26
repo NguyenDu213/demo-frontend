@@ -99,14 +99,10 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
   }
 
   getEmptyRole(): Role {
-    // Sử dụng fallback nếu userContextService chưa được inject (trong property initializer)
-    const currentUserId = this.userContextService?.getCurrentUserId() || 1;
     return {
       roleName: '',
       typeRole: TypeRole.PROVIDER,
-      description: '',
-      createBy: currentUserId,
-      updateBy: currentUserId
+      description: ''
     };
   }
 
@@ -163,14 +159,10 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
 
     // Cập nhật tên role đã chuẩn hóa
     this.selectedRole.roleName = normalizedName;
-    const currentUserId = this.userContextService.getCurrentUserId();
 
     this.isSaving = true;
 
     if (this.isEditMode && this.selectedRole.id) {
-      // Update updateBy với current user ID
-      this.selectedRole.updateBy = currentUserId;
-
       this.roleService.updateRole(this.selectedRole.id, this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
@@ -187,10 +179,6 @@ export class ProviderRolesComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      // Set createBy và updateBy khi tạo mới
-      this.selectedRole.createBy = currentUserId;
-      this.selectedRole.updateBy = currentUserId;
-
       this.roleService.createRole(this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;

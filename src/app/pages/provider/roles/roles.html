@@ -15,14 +15,12 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
     <div class="flex items-center gap-2">
       <div class="flex-1 relative">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên" (keyup.enter)="onSearchChange()"
-          (input)="onSearchChange()"
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Tìm kiếm theo tên..." (keyup.enter)="onSearchChange()"
           class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" />
-        <button type="button" (click)="onSearchChange()"
+        <button type="button" *ngIf="searchTerm" (click)="searchTerm = ''; loadRoles()"
           class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
         </button>
       </div>
@@ -48,26 +46,28 @@
       <table class="w-full">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Tên Role</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Loại Role</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Mô tả</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase">Thao tác</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Tên Role</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Loại Role</th>
+            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Mô tả</th>
+            <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr *ngFor="let role of filteredRoles" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ role.roleName }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ role.typeRole }}</td>
+            <td class="px-6 py-4 text-sm font-medium text-blue-600">{{ role.roleName }}</td>
+            <td class="px-6 py-4 text-sm text-gray-800">{{ role.typeRole }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ role.description }}</td>
-            <td class="px-6 py-4 text-sm">
-              <div class="flex items-center space-x-2">
-                <button (click)="openEditModal(role)"
-                  class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
-                  Sửa
+            <td class="px-6 py-4 text-center">
+              <div class="flex justify-center space-x-2">
+                <button (click)="openEditModal(role)" class="text-blue-600 hover:bg-blue-50 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
                 </button>
-                <button (click)="deleteRole(role.id!)"
-                  class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
-                  Xóa
+                <button (click)="deleteRole(role.id!)" class="text-red-600 hover:bg-red-50 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
                 </button>
               </div>
             </td>
@@ -81,15 +81,14 @@
   </div>
 
   <!-- Pagination -->
-  <div *ngIf="!isLoading && totalPages > 0" class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6 rounded-b-lg shadow-sm">
+  <div *ngIf="!isLoading && totalPages > 0"
+    class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6 rounded-b-lg shadow-sm">
     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
       <div class="flex items-center gap-2">
         <span class="text-sm text-gray-700">Hiển thị</span>
 
         <div class="relative">
-          <select
-            [(ngModel)]="pageSize"
-            (change)="onPageSizeChange()"
+          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()"
             class="appearance-none bg-white border border-gray-300 text-gray-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-16 p-1.5 pr-6 outline-none cursor-pointer transition-all hover:border-blue-400">
             <option [value]="3">3</option>
             <option [value]="5">5</option>
@@ -111,28 +110,31 @@
       <div>
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
           <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0"
-                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="sr-only">Previous</span>
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
             </svg>
           </button>
 
-          <button *ngFor="let p of pagesArray" (click)="changePage(p)"
-                  [class.bg-blue-50]="p === currentPage"
-                  [class.text-blue-600]="p === currentPage"
-                  [class.border-blue-500]="p === currentPage"
-                  [class.bg-white]="p !== currentPage"
-                  [class.text-gray-500]="p !== currentPage"
-                  class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50">
+          <button *ngFor="let p of pagesArray" (click)="changePage(p)" [class.bg-blue-50]="p === currentPage"
+            [class.text-blue-600]="p === currentPage" [class.border-blue-500]="p === currentPage"
+            [class.bg-white]="p !== currentPage" [class.text-gray-500]="p !== currentPage"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium hover:bg-gray-50">
             {{ p + 1 }}
           </button>
 
           <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages - 1"
-                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="sr-only">Next</span>
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd" />
             </svg>
           </button>
         </nav>
@@ -141,54 +143,63 @@
   </div>
 
   <!-- Modal -->
-  <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    (click)="closeModal()">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
-      <h2 class="text-2xl font-bold text-gray-800 mb-6">
-        {{ isEditMode ? 'Chỉnh sửa Role' : 'Thêm Role mới' }}
-      </h2>
+  <div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm" (click)="closeModal()">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+          {{ isEditMode ? 'Chỉnh sửa Role' : 'Thêm Role mới' }}
+        </h2>
+        <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
 
-      <form (ngSubmit)="saveRole()" class="space-y-4">
+      <form (ngSubmit)="saveRole()" #roleForm="ngForm" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Tên Role *</label>
-          <input type="text" [(ngModel)]="selectedRole.roleName" name="roleName" required
+          <label class="block text-sm font-medium text-gray-700 mb-2">Tên Role <span class="text-red-500">*</span></label>
+          <input type="text" [(ngModel)]="selectedRole.roleName" name="roleName" required minlength="2" maxlength="50"
+            #roleNameModel="ngModel"
             (input)="clearError('roleName')"
             class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-            [class.border-red-500]="fieldErrors['roleName']" [class.focus:ring-red-200]="fieldErrors['roleName']"
-            [class.border-gray-300]="!fieldErrors['roleName']" [class.focus:ring-blue-500]="!fieldErrors['roleName']" />
-          <p *ngIf="fieldErrors['roleName']" class="text-red-500 text-xs mt-1">{{ fieldErrors['roleName'] }}</p>
-          <p *ngIf="!fieldErrors['roleName']" class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa:
-            viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Quản trị viên" →
-            "QUAN_TRI_VIEN"</p>
+            [class.border-red-500]="(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName']"
+            [class.focus:ring-red-200]="(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName']"
+            [class.border-gray-300]="!((roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName'])"
+            [class.focus:ring-blue-500]="!((roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched)) || fieldErrors['roleName'])" />
+          <app-error-message [control]="roleNameModel" label="Tên Role" [backendError]="fieldErrors['roleName']"></app-error-message>
+          <p *ngIf="!fieldErrors['roleName'] && !(roleNameModel.invalid && (roleNameModel.dirty || roleNameModel.touched))" class="mt-1 text-xs text-gray-500">Tên role sẽ được tự động chuẩn hóa: viết hoa, không dấu, không khoảng trắng, chỉ dùng dấu gạch dưới (_). Ví dụ: "Quản trị viên" → "QUAN_TRI_VIEN"</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Loại Role *</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Loại Role <span class="text-red-500">*</span></label>
           <input type="text" [value]="'PROVIDER'" disabled
             class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none" />
           <p class="mt-1 text-xs text-gray-500">Loại Role mặc định là PROVIDER</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Mô tả *</label>
-          <textarea [(ngModel)]="selectedRole.description" name="description" required rows="4"
+          <label class="block text-sm font-medium text-gray-700 mb-2">Mô tả <span class="text-red-500">*</span></label>
+          <textarea [(ngModel)]="selectedRole.description" name="description" required rows="4" minlength="5" maxlength="200"
+            #descriptionModel="ngModel"
             (input)="clearError('description')"
             class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-            [class.border-red-500]="fieldErrors['description']" [class.focus:ring-red-200]="fieldErrors['description']"
-            [class.border-gray-300]="!fieldErrors['description']"
-            [class.focus:ring-blue-500]="!fieldErrors['description']"></textarea>
-          <p *ngIf="fieldErrors['description']" class="text-red-500 text-xs mt-1">{{ fieldErrors['description'] }}</p>
+            [class.border-red-500]="(descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description']"
+            [class.focus:ring-red-200]="(descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description']"
+            [class.border-gray-300]="!((descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description'])"
+            [class.focus:ring-blue-500]="!((descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)) || fieldErrors['description'])"></textarea>
+          <app-error-message [control]="descriptionModel" label="Mô tả" [backendError]="fieldErrors['description']"></app-error-message>
         </div>
 
-        <div class="flex justify-end space-x-4 pt-4">
+        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100 mt-6">
           <button type="button" (click)="closeModal()"
-            class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700">
             Hủy
           </button>
-          <button type="submit" [disabled]="isSaving"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span *ngIf="!isSaving">Lưu</span>
-            <span *ngIf="isSaving">Đang lưu...</span>
+          <button type="submit"
+            [disabled]="roleForm.invalid || isSaving"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg *ngIf="isSaving" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ isSaving ? 'Đang lưu...' : 'Lưu thông tin' }}
           </button>
         </div>
       </form>
@@ -196,11 +207,12 @@
   </div>
 
   <!-- Modal Gán Role Mới -->
-  <div *ngIf="isReassignModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    (click)="closeReassignModal()">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto"
-      (click)="$event.stopPropagation()">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Gán Role Mới</h2>
+  <div *ngIf="isReassignModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm" (click)="closeReassignModal()">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Gán Role Mới</h2>
+        <button (click)="closeReassignModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
 
       <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p class="text-sm text-yellow-800">

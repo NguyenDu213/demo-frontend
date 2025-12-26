@@ -30,6 +30,9 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
   totalElements: number = 0;
   totalPages: number = 0;
 
+  // Biến lưu danh sách lỗi validation từ server: { "field_name": "error_message" }
+  fieldErrors: { [key: string]: string } = {};
+
   // Modal gán role mới
   isReassignModalOpen: boolean = false;
   roleToDelete: Role | null = null;
@@ -101,15 +104,14 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       roleName: '',
       typeRole: TypeRole.SCHOOL,
       description: '',
-      schoolId: this.currentUser?.schoolId || null,
-      createBy: this.currentUser?.id || 1,
-      updateBy: this.currentUser?.id || 1
+      schoolId: this.currentUser?.schoolId || null
     };
   }
 
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedRole = this.getEmptyRole();
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
@@ -120,13 +122,21 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
       typeRole: TypeRole.SCHOOL, // Đảm bảo typeRole luôn là SCHOOL
       schoolId: this.currentUser?.schoolId || null // Đảm bảo schoolId đúng
     };
+    this.fieldErrors = {}; // Reset lỗi cũ
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.selectedRole = this.getEmptyRole();
+    this.fieldErrors = {};
     this.isSaving = false;
+  }
+
+  clearError(field: string): void {
+    if (this.fieldErrors[field]) {
+      delete this.fieldErrors[field];
+    }
   }
 
   saveRole(): void {
@@ -156,28 +166,27 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
     // Đảm bảo schoolId được set từ current user
     this.selectedRole.schoolId = this.currentUser?.schoolId || null;
 
-    const currentUserId = this.currentUser?.id || 1;
+    // Reset lỗi trước khi validate
+    this.fieldErrors = {};
+
     this.isSaving = true;
 
     if (this.isEditMode && this.selectedRole.id) {
-      // Update updateBy với current user ID
-      this.selectedRole.updateBy = currentUserId;
-
       this.roleService.updateRole(this.selectedRole.id, this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
           this.loadRoles();
           this.closeModal();
+          alert('Cập nhật role thành công!');
         },
-        error: () => {
+        error: (err) => {
           this.isSaving = false;
+          console.error('Lỗi khi cập nhật role:', err);
+          this.handleBackendError(err);
+          this.cdr.detectChanges();
         }
       });
     } else {
-      // Set createBy và updateBy khi tạo mới
-      this.selectedRole.createBy = currentUserId;
-      this.selectedRole.updateBy = currentUserId;
-
       this.roleService.createRole(this.selectedRole).subscribe({
         next: () => {
           this.isSaving = false;
@@ -185,9 +194,13 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
           this.currentPage = 0;
           this.loadRoles();
           this.closeModal();
+          alert('Thêm role mới thành công!');
         },
-        error: () => {
+        error: (err) => {
           this.isSaving = false;
+          console.error('Lỗi khi tạo role:', err);
+          this.handleBackendError(err);
+          this.cdr.detectChanges();
         }
       });
     }
@@ -399,6 +412,30 @@ export class SchoolRolesComponent implements OnInit, OnDestroy {
    */
   get pagesArray(): number[] {
     return Array(this.totalPages).fill(0).map((x, i) => i);
+  }
+
+  private handleBackendError(err: any): void {
+    const errorBody = err.error;
+    if (errorBody && errorBody.data && typeof errorBody.data === 'object' && !Array.isArray(errorBody.data)) {
+      // Kiểm tra xem data có chứa field errors không (ví dụ: { roleName: "error message" })
+      const hasFieldErrors = Object.keys(errorBody.data).some(key =>
+        typeof errorBody.data[key] === 'string' && key !== 'message'
+      );
+
+      if (hasFieldErrors) {
+        this.fieldErrors = errorBody.data;
+        console.log('Phát hiện lỗi Validation:', this.fieldErrors);
+        // Không hiển thị alert khi có validation errors, chỉ hiển thị trên form
+        return;
+      }
+    }
+
+    // Nếu không phải validation errors, hiển thị message
+    if (errorBody && errorBody.message) {
+      alert(errorBody.message);
+    } else {
+      alert('Đã xảy ra lỗi không xác định. Vui lòng thử lại.');
+    }
   }
 }
 

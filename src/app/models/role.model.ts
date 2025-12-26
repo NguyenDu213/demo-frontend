@@ -13,7 +13,5 @@ export interface Role {
   userCount?: number; // From backend RoleResponse
   createdAt?: string;
   updatedAt?: string;
-  createBy?: number; // Optional in response
-  updateBy?: number; // Optional in response
 }
 
