@@ -1,7 +1,6 @@
 export enum Gender {
   MALE = 'MALE',
-  FEMALE = 'FEMALE',
-  OTHER = 'OTHER'
+  FEMALE = 'FEMALE'
 }
 
 export enum Scope {
