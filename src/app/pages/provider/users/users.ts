@@ -1,6 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { UserService } from '../../../services/user.service';
 import { RoleService } from '../../../services/role.service';
 import { SchoolService } from '../../../services/school.service';
@@ -16,7 +14,7 @@ import { School } from '../../../models/school.model';
   styleUrls: ['./users.scss'],
   standalone: false,
 })
-export class ProviderUsersComponent implements OnInit, OnDestroy {
+export class ProviderUsersComponent implements OnInit {
   users: User[] = [];
   roles: Role[] = [];
   allRoles: Role[] = []; // Tất cả roles để hiển thị role name
@@ -27,7 +25,7 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
   selectedUser: User = this.getEmptyUser();
   originalEmail: string = ''; // Lưu email gốc khi edit
   searchTerm: string = '';
-  private searchSubject = new Subject<string>();
+  // searchTerm is used when user presses Enter or clicks Search
   genders = Object.values(Gender);
   scopes = Object.values(Scope);
   isSaving: boolean = false;
@@ -58,15 +56,14 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
     this.loadRoles();
     this.loadAllRoles(); // Load tất cả roles để hiển thị role name
 
-    // Setup debounce cho search
-    this.searchSubject.pipe(debounceTime(500), distinctUntilChanged()).subscribe(() => {
-      this.loadUsers();
-    });
+    // Search is triggered explicitly via onSearchChange()
   }
 
-  ngOnDestroy(): void {
-    this.searchSubject.complete();
+  isGender(gender: string) {
+    return gender === "MALE" ? "Nam" : "Nữ";  
   }
+
+  // no OnDestroy cleanup required
 
 
   getSchoolName(schoolId: number | null | undefined): string {
@@ -111,18 +108,18 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
                     return user.scope === 'PROVIDER' && userRole.roleName !== 'SYSTEM_ADMIN';
                   });
 
-                  // Filter theo search term nếu có
+                  // Filter theo tên nếu có
                   if (this.searchTerm && this.searchTerm.trim()) {
                     const term = this.searchTerm.toLowerCase();
-                    filteredUsers = filteredUsers.filter(
-                      (user) =>
-                        user.fullName.toLowerCase().includes(term) ||
-                        user.email.toLowerCase().includes(term) ||
-                        user.phoneNumber?.toLowerCase().includes(term)
+                    filteredUsers = filteredUsers.filter((user) =>
+                      user.fullName.toLowerCase().includes(term)
                     );
                   }
 
                   this.users = filteredUsers;
+                  // Cập nhật thông tin phân trang
+                  this.totalItems = filteredUsers.length;
+                  this.recomputePagination();
                   this.isLoading = false;
                   this.cdr.detectChanges();
                 } else {
@@ -145,18 +142,18 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
                         );
                       });
 
-                      // Filter theo search term nếu có
+                      // Filter theo tên nếu có
                       if (this.searchTerm && this.searchTerm.trim()) {
                         const term = this.searchTerm.toLowerCase();
-                        filteredUsers = filteredUsers.filter(
-                          (user) =>
-                            user.fullName.toLowerCase().includes(term) ||
-                            user.email.toLowerCase().includes(term) ||
-                            user.phoneNumber?.toLowerCase().includes(term)
+                        filteredUsers = filteredUsers.filter((user) =>
+                          user.fullName.toLowerCase().includes(term)
                         );
                       }
 
                       this.users = filteredUsers;
+                      // Cập nhật thông tin phân trang
+                      this.totalItems = filteredUsers.length;
+                      this.recomputePagination();
                       this.isLoading = false;
                       this.cdr.detectChanges();
                     },
@@ -178,11 +175,8 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
 
                 if (this.searchTerm && this.searchTerm.trim()) {
                   const term = this.searchTerm.toLowerCase();
-                  filteredUsers = filteredUsers.filter(
-                    (user) =>
-                      user.fullName.toLowerCase().includes(term) ||
-                      user.email.toLowerCase().includes(term) ||
-                      user.phoneNumber?.toLowerCase().includes(term)
+                  filteredUsers = filteredUsers.filter((user) =>
+                    user.fullName.toLowerCase().includes(term)
                   );
                 }
 
@@ -439,8 +433,8 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
      * Gọi khi search term thay đổi
      */
     onSearchChange(): void {
-      this.currentPage = 1;
-      this.searchSubject.next(this.searchTerm);
+        this.currentPage = 1;
+        this.loadUsers();
     }
 
     isAdminUser(): boolean {
@@ -475,6 +469,15 @@ export class ProviderUsersComponent implements OnInit, OnDestroy {
       this.totalItems = this.users.length;
       this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.pageSize));
       if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+    }
+
+    // Helper to surface backend validation errors in modal
+    hasBackendErrors(): boolean {
+      return Object.keys(this.fieldErrors || {}).length > 0;
+    }
+
+    backendErrorList(): string[] {
+      return Object.values(this.fieldErrors || {});
     }
 
 

@@ -1,6 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { UserService } from '../../../services/user.service';
 import { RoleService } from '../../../services/role.service';
 import { AuthService } from '../../../services/auth.service';
@@ -13,7 +11,7 @@ import { Role } from '../../../models/role.model';
   styleUrls: ['./users.scss'],
   standalone: false,
 })
-export class SchoolUsersComponent implements OnInit, OnDestroy {
+export class SchoolUsersComponent implements OnInit {
   users: User[] = [];
   roles: Role[] = [];
   isLoading: boolean = true;
@@ -22,7 +20,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
   selectedUser: User = this.getEmptyUser();
   originalEmail: string = ''; // Lưu email gốc khi edit
   searchTerm: string = '';
-  private searchSubject = new Subject<string>();
+  // searchTerm is used when user presses Enter or clicks Search
   genders = Object.values(Gender);
   currentUser: User | null = null;
   isSaving: boolean = false;
@@ -48,15 +46,10 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     this.currentUser = this.authService.getCurrentUser();
     this.loadUsers();
     this.loadRoles();
-
-    // Setup debounce cho search
-    this.searchSubject.pipe(debounceTime(500), distinctUntilChanged()).subscribe(() => {
-      this.loadUsers();
-    });
   }
 
-  ngOnDestroy(): void {
-    this.searchSubject.complete();
+  isGender(gender: string) {
+    return gender === "MALE" ? "Nam" : "Nữ";  
   }
 
   loadUsers(): void {
@@ -75,14 +68,11 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
                 return userRole?.roleName !== 'SCHOOL_ADMIN';
               });
 
-              // Filter theo search term nếu có
+              // Filter theo tên nếu có
               if (this.searchTerm && this.searchTerm.trim()) {
                 const term = this.searchTerm.toLowerCase();
-                filteredUsers = filteredUsers.filter(
-                  (user) =>
-                    user.fullName.toLowerCase().includes(term) ||
-                    user.email.toLowerCase().includes(term) ||
-                    user.phoneNumber?.toLowerCase().includes(term)
+                filteredUsers = filteredUsers.filter((user) =>
+                  user.fullName.toLowerCase().includes(term)
                 );
               }
 
@@ -283,7 +273,7 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
    */
   onSearchChange(): void {
     this.currentPage = 1;
-    this.searchSubject.next(this.searchTerm);
+    this.loadUsers();
   }
 
   get pages(): number[] {
@@ -312,6 +302,15 @@ export class SchoolUsersComponent implements OnInit, OnDestroy {
     this.totalItems = this.users.length;
     this.totalPages = Math.max(1, Math.ceil(this.totalItems / this.pageSize));
     if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+  }
+
+  // Helper to surface backend validation errors in modal
+  hasBackendErrors(): boolean {
+    return Object.keys(this.fieldErrors || {}).length > 0;
+  }
+
+  backendErrorList(): string[] {
+    return Object.values(this.fieldErrors || {});
   }
 
   getRoleName(roleId: number): string {

@@ -20,9 +20,8 @@
         <input
           type="text"
           [(ngModel)]="searchTerm"
-          placeholder="Tìm kiếm theo tên, email, số điện thoại"
+          placeholder="Tìm kiếm theo tên..."
           (keyup.enter)="onSearchChange()"
-          (input)="onSearchChange()"
           class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <button type="button" (click)="onSearchChange()"
@@ -68,7 +67,7 @@
             <td class="px-6 py-4 text-sm text-gray-800 font-medium">{{ user.fullName }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ user.phoneNumber }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ user.gender }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{{ isGender(user.gender) }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ getRoleName(user.roleId) }}</td>
             <td class="px-6 py-4 text-sm">
               <span [class]="user.isActive ? 'px-2 py-1 bg-green-100 text-green-700 rounded' : 'px-2 py-1 bg-red-100 text-red-700 rounded'">
@@ -167,7 +166,11 @@
         {{ isEditMode ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới' }}
       </h2>
 
-      <form (ngSubmit)="saveUser()" class="space-y-4">
+      <div *ngIf="hasBackendErrors()" class="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+        <p *ngFor="let e of backendErrorList()" class="text-red-600 text-sm">{{ e }}</p>
+      </div>
+
+      <form (ngSubmit)="saveUser()" #userForm="ngForm" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Họ tên *</label>
@@ -175,15 +178,16 @@
               type="text"
               [(ngModel)]="selectedUser.fullName"
               name="fullName"
-              required
+              required minlength="3" maxlength="100"
+              #fullNameModel="ngModel"
               (input)="clearError('fullName')"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-              [class.border-red-500]="fieldErrors['fullName']"
-              [class.focus:ring-red-200]="fieldErrors['fullName']"
-              [class.border-gray-300]="!fieldErrors['fullName']"
-              [class.focus:ring-blue-500]="!fieldErrors['fullName']"
+              [class.border-red-500]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
+              [class.focus:ring-red-200]="(fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName']"
+              [class.border-gray-300]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])"
+              [class.focus:ring-blue-500]="!((fullNameModel.invalid && (fullNameModel.dirty || fullNameModel.touched)) || fieldErrors['fullName'])"
             />
-            <p *ngIf="fieldErrors['fullName']" class="text-red-500 text-xs mt-1">{{ fieldErrors['fullName'] }}</p>
+            <app-error-message [control]="fullNameModel" label="Họ tên" [backendError]="fieldErrors['fullName']"></app-error-message>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
@@ -191,12 +195,17 @@
               type="email"
               [(ngModel)]="selectedUser.email"
               name="email"
-              [required]="!isEditMode"
+              [required]="!isEditMode" email maxlength="100"
+              #emailModel="ngModel"
               [disabled]="isEditMode"
               (input)="clearError('email')"
-              [class]="'w-full px-4 py-2 border rounded-lg outline-none transition-all ' + (isEditMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed ' : '') + (fieldErrors['email'] ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent')"
+              [class]="'w-full px-4 py-2 border rounded-lg outline-none transition-all ' + (isEditMode ? 'bg-gray-100 text-gray-600 cursor-not-allowed ' : '')"
+              [class.border-red-500]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+              [class.focus:ring-red-200]="(emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email']"
+              [class.border-gray-300]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])"
+              [class.focus:ring-blue-500]="!((emailModel.invalid && (emailModel.dirty || emailModel.touched)) || fieldErrors['email'])"
             />
-            <p *ngIf="fieldErrors['email']" class="text-red-500 text-xs mt-1">{{ fieldErrors['email'] }}</p>
+            <app-error-message [control]="emailModel" label="Email" [backendError]="fieldErrors['email']"></app-error-message>
             <p *ngIf="!fieldErrors['email'] && isEditMode" class="mt-1 text-xs text-gray-500">Email không thể thay đổi</p>
           </div>
         </div>
@@ -204,20 +213,22 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu *</label>
-            <input
-              *ngIf="!isEditMode"
-              type="password"
-              [(ngModel)]="selectedUser.password"
-              name="password"
-              required
-              (input)="clearError('password')"
-              class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-              [class.border-red-500]="fieldErrors['password']"
-              [class.focus:ring-red-200]="fieldErrors['password']"
-              [class.border-gray-300]="!fieldErrors['password']"
-              [class.focus:ring-blue-500]="!fieldErrors['password']"
-            />
-            <p *ngIf="fieldErrors['password']" class="text-red-500 text-xs mt-1">{{ fieldErrors['password'] }}</p>
+            <ng-container *ngIf="!isEditMode">
+              <input
+                type="password"
+                [(ngModel)]="selectedUser.password"
+                name="password"
+                required minlength="6" maxlength="100"
+                #passwordModel="ngModel"
+                (input)="clearError('password')"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                [class.border-red-500]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
+                [class.focus:ring-red-200]="(passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password']"
+                [class.border-gray-300]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])"
+                [class.focus:ring-blue-500]="!((passwordModel.invalid && (passwordModel.dirty || passwordModel.touched)) || fieldErrors['password'])"
+              />
+              <app-error-message [control]="passwordModel" label="Mật khẩu" [backendError]="fieldErrors['password']"></app-error-message>
+            </ng-container>
             <div *ngIf="isEditMode" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
               <span class="text-sm">Mật khẩu không thể thay đổi</span>
             </div>
@@ -228,15 +239,16 @@
               type="text"
               [(ngModel)]="selectedUser.phoneNumber"
               name="phoneNumber"
-              required
+              required pattern="^(0|\+84)[0-9]{9,10}$" minlength="10" maxlength="11"
+              #phoneModel="ngModel"
               (input)="clearError('phoneNumber')"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-              [class.border-red-500]="fieldErrors['phoneNumber']"
-              [class.focus:ring-red-200]="fieldErrors['phoneNumber']"
-              [class.border-gray-300]="!fieldErrors['phoneNumber']"
-              [class.focus:ring-blue-500]="!fieldErrors['phoneNumber']"
+              [class.border-red-500]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
+              [class.focus:ring-red-200]="(phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber']"
+              [class.border-gray-300]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])"
+              [class.focus:ring-blue-500]="!((phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)) || fieldErrors['phoneNumber'])"
             />
-            <p *ngIf="fieldErrors['phoneNumber']" class="text-red-500 text-xs mt-1">{{ fieldErrors['phoneNumber'] }}</p>
+            <app-error-message [control]="phoneModel" label="Số điện thoại" [backendError]="fieldErrors['phoneNumber']"></app-error-message>
           </div>
         </div>
 
@@ -249,7 +261,7 @@
               required
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             >
-              <option *ngFor="let gender of genders" [value]="gender">{{ gender }}</option>
+              <option *ngFor="let gender of genders" [value]="gender">{{ isGender(gender) }}</option>
             </select>
           </div>
           <div>
@@ -259,9 +271,10 @@
               [(ngModel)]="selectedUser.birthYear"
               name="birthYear"
               required
+              #birthModel="ngModel"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
-            <p *ngIf="fieldErrors['birthYear']" class="text-red-500 text-xs mt-1">{{ fieldErrors['birthYear'] }}</p>
+            <app-error-message [control]="birthModel" label="Ngày sinh" [backendError]="fieldErrors['birthYear']"></app-error-message>
           </div>
         </div>
 
@@ -271,15 +284,16 @@
             type="text"
             [(ngModel)]="selectedUser.address"
             name="address"
-            required
+            required minlength="5" maxlength="200"
+            #addressModel="ngModel"
             (input)="clearError('address')"
             class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-            [class.border-red-500]="fieldErrors['address']"
-            [class.focus:ring-red-200]="fieldErrors['address']"
-            [class.border-gray-300]="!fieldErrors['address']"
-            [class.focus:ring-blue-500]="!fieldErrors['address']"
+            [class.border-red-500]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+            [class.focus:ring-red-200]="(addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address']"
+            [class.border-gray-300]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])"
+            [class.focus:ring-blue-500]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])"
           />
-          <p *ngIf="fieldErrors['address']" class="text-red-500 text-xs mt-1">{{ fieldErrors['address'] }}</p>
+          <app-error-message [control]="addressModel" label="Địa chỉ" [backendError]="fieldErrors['address']"></app-error-message>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -289,17 +303,18 @@
               [(ngModel)]="selectedUser.roleId"
               name="roleId"
               required
+              #roleModel="ngModel"
               (change)="clearError('roleId')"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
-              [class.border-red-500]="fieldErrors['roleId']"
-              [class.focus:ring-red-200]="fieldErrors['roleId']"
-              [class.border-gray-300]="!fieldErrors['roleId']"
-              [class.focus:ring-blue-500]="!fieldErrors['roleId']"
+              [class.border-red-500]="(roleModel.invalid && (roleModel.dirty || roleModel.touched)) || fieldErrors['roleId']"
+              [class.focus:ring-red-200]="(roleModel.invalid && (roleModel.dirty || roleModel.touched)) || fieldErrors['roleId']"
+              [class.border-gray-300]="!((roleModel.invalid && (roleModel.dirty || roleModel.touched)) || fieldErrors['roleId'])"
+              [class.focus:ring-blue-500]="!((roleModel.invalid && (roleModel.dirty || roleModel.touched)) || fieldErrors['roleId'])"
             >
               <option value="0">Chọn role</option>
               <option *ngFor="let role of roles" [value]="role.id">{{ role.roleName }}</option>
             </select>
-            <p *ngIf="fieldErrors['roleId']" class="text-red-500 text-xs mt-1">{{ fieldErrors['roleId'] }}</p>
+            <app-error-message [control]="roleModel" label="Role" [backendError]="fieldErrors['roleId']"></app-error-message>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
@@ -325,7 +340,7 @@
           </button>
           <button
             type="submit"
-            [disabled]="isSaving"
+            [disabled]="userForm.invalid || isSaving"
             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span *ngIf="!isSaving">Lưu</span>
