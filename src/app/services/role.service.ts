@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { Role } from '../models/role.model';
 import { ApiResponse } from '../models/auth.model';
+import { PageResponse } from '../models/page-response.model';
 import { UserService } from './user.service';
 
 @Injectable({
@@ -31,22 +32,34 @@ export class RoleService {
   }
 
   /**
-   * Lấy danh sách roles
-   * Backend expects: GET /api/roles?typeRole=PROVIDER hoặc /api/roles?typeRole=SCHOOL&schoolId=1
+   * Lấy danh sách roles (backward compatibility - không pagination)
+   * Sử dụng pagination với size lớn để lấy tất cả
    */
   getRoles(typeRole?: string, schoolId?: number): Observable<Role[]> {
-    let params = new HttpParams();
+    // Sử dụng pagination với size lớn để lấy tất cả roles
+    return this.getRolesPaginated(typeRole, 0, 1000).pipe(
+      map(pageData => pageData.data)
+    );
+  }
+
+  /**
+   * Lấy danh sách roles với pagination
+   * Backend expects: GET /api/roles?typeRole=SCHOOL&page=1&size=10
+   * Note: Backend nhận page bắt đầu từ 1, nhưng frontend dùng 0-based, nên cần +1
+   */
+  getRolesPaginated(typeRole?: string, page: number = 0, size: number = 10): Observable<PageResponse<Role>> {
+    let params = new HttpParams()
+      .set('page', (page + 1).toString()) // Backend nhận page từ 1
+      .set('size', size.toString());
+
     if (typeRole) {
       params = params.set('typeRole', typeRole);
     }
-    if (schoolId !== undefined) {
-      params = params.set('schoolId', schoolId.toString());
-    }
 
-    console.log('[API Request] GET /roles', typeRole ? `typeRole=${typeRole}` : '', schoolId ? `schoolId=${schoolId}` : '');
-    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles`, { params, headers: this.getHeaders() })
+    console.log('[API Request] GET /roles (paginated)', typeRole ? `typeRole=${typeRole}` : '', `page=${page + 1}, size=${size}`);
+    return this.http.get<ApiResponse<PageResponse<Role>>>(`${this.apiUrl}/roles`, { params, headers: this.getHeaders() })
       .pipe(
-        tap(response => console.log('[API Response] GET /roles:', response)),
+        tap(response => console.log('[API Response] GET /roles (paginated):', response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi lấy danh sách role');
@@ -54,7 +67,7 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
-          console.error('[API Error] GET /roles:', error);
+          console.error('[API Error] GET /roles (paginated):', error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi lấy danh sách role';
           throw { error: { message: errorMessage } };
         })
@@ -62,11 +75,25 @@ export class RoleService {
   }
 
   /**
-   * Tìm kiếm roles theo keyword, schoolId, typeRole
-   * Backend expects: GET /api/roles/search?keyword=xxx&schoolId=1&typeRole=PROVIDER
+   * Tìm kiếm roles (backward compatibility - không pagination)
+   * Sử dụng pagination với size lớn để lấy tất cả
    */
   searchRoles(keyword?: string, schoolId?: number, typeRole?: string): Observable<Role[]> {
-    let params = new HttpParams();
+    // Sử dụng pagination với size lớn để lấy tất cả roles
+    return this.searchRolesPaginated(keyword, schoolId, typeRole, 0, 1000).pipe(
+      map(pageData => pageData.data)
+    );
+  }
+
+  /**
+   * Tìm kiếm roles với pagination
+   * Backend expects: GET /api/roles/search?keyword=xxx&schoolId=1&typeRole=SCHOOL&page=1&size=10
+   * Note: Backend nhận page bắt đầu từ 1, nhưng frontend dùng 0-based, nên cần +1
+   */
+  searchRolesPaginated(keyword?: string, schoolId?: number, typeRole?: string, page: number = 0, size: number = 10): Observable<PageResponse<Role>> {
+    let params = new HttpParams()
+      .set('page', (page + 1).toString()) // Backend nhận page từ 1
+      .set('size', size.toString());
 
     if (keyword && keyword.trim()) {
       params = params.set('keyword', keyword.trim());
@@ -78,10 +105,10 @@ export class RoleService {
       params = params.set('typeRole', typeRole);
     }
 
-    console.log('[API Request] GET /roles/search', keyword ? `keyword=${keyword}` : '', schoolId ? `schoolId=${schoolId}` : '', typeRole ? `typeRole=${typeRole}` : '');
-    return this.http.get<ApiResponse<Role[]>>(`${this.apiUrl}/roles/search`, { params, headers: this.getHeaders() })
+    console.log('[API Request] GET /roles/search (paginated)', keyword ? `keyword=${keyword}` : '', schoolId ? `schoolId=${schoolId}` : '', typeRole ? `typeRole=${typeRole}` : '', `page=${page + 1}, size=${size}`);
+    return this.http.get<ApiResponse<PageResponse<Role>>>(`${this.apiUrl}/roles/search`, { params, headers: this.getHeaders() })
       .pipe(
-        tap(response => console.log('[API Response] GET /roles/search:', response)),
+        tap(response => console.log('[API Response] GET /roles/search (paginated):', response)),
         map(apiResponse => {
           if (!apiResponse.status || !apiResponse.data) {
             throw new Error(apiResponse.message || 'Lỗi khi tìm kiếm role');
@@ -89,7 +116,7 @@ export class RoleService {
           return apiResponse.data;
         }),
         catchError(error => {
-          console.error('[API Error] GET /roles/search:', error);
+          console.error('[API Error] GET /roles/search (paginated):', error);
           const errorMessage = error.error?.message || error.message || 'Lỗi khi tìm kiếm role';
           throw { error: { message: errorMessage } };
         })

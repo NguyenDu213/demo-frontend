@@ -25,6 +25,7 @@ import { ProviderRolesComponent } from './pages/provider/roles/roles';
 import { SchoolHomeComponent } from './pages/school/home/home';
 import { SchoolUsersComponent } from './pages/school/users/users';
 import { SchoolRolesComponent } from './pages/school/roles/roles';
+import {ErrorMessageComponent} from './components/error-message/error-message.component';
 
 // Đăng ký locale tiếng Anh cho Angular
 registerLocaleData(en);
@@ -32,6 +33,7 @@ registerLocaleData(en);
 @NgModule({
   declarations: [
     App,
+    ErrorMessageComponent,
     // Login & Layout
     LoginComponent,
     LayoutComponent,
