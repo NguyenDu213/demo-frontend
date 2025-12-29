@@ -159,16 +159,20 @@
               <input type="text"
                      [(ngModel)]="selectedSchool.code"
                      name="code"
-                     required minlength="3" maxlength="20"
+                     required minlength="2" maxlength="50"
+                     pattern="^[A-Z0-9]+$"
                      #codeModel="ngModel"
                      (input)="clearError('code')"
-                     class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
+                     class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all font-mono uppercase"
                      [class.border-red-500]="(codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code']"
                      [class.focus:ring-red-200]="(codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code']"
                      [class.border-gray-300]="!((codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code'])"
                      [class.focus:ring-blue-500]="!((codeModel.invalid && (codeModel.dirty || codeModel.touched)) || fieldErrors['code'])" />
 
               <app-error-message [control]="codeModel" label="Mã trường" [backendError]="fieldErrors['code']"></app-error-message>
+              <p *ngIf="!fieldErrors['code'] && !(codeModel.invalid && (codeModel.dirty || codeModel.touched))" class="mt-1 text-xs text-gray-500">
+                Mã trường chỉ được chứa chữ in hoa và số (không có dấu gạch dưới). Ví dụ: TH001, ABC123
+              </p>
             </div>
 
             <div>
@@ -176,7 +180,8 @@
               <input type="text"
                      [(ngModel)]="selectedSchool.name"
                      name="name"
-                     required minlength="5" maxlength="100"
+                     required minlength="2" maxlength="200"
+                     pattern="^[a-zA-Z\s]+$"
                      #nameModel="ngModel"
                      (input)="clearError('name')"
                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
@@ -186,6 +191,9 @@
                      [class.focus:ring-blue-500]="!((nameModel.invalid && (nameModel.dirty || nameModel.touched)) || fieldErrors['name'])" />
 
               <app-error-message [control]="nameModel" label="Tên trường" [backendError]="fieldErrors['name']"></app-error-message>
+              <p *ngIf="!fieldErrors['name'] && !(nameModel.invalid && (nameModel.dirty || nameModel.touched))" class="mt-1 text-xs text-gray-500">
+                Tên trường chỉ được chứa chữ cái (chữ hoa và chữ thường) và khoảng trắng. Không được chứa số, ký tự đặc biệt hoặc dấu tiếng Việt. Ví dụ: "Trường THPT ABC" - hợp lệ, "Trường THPT 123" - không hợp lệ.
+              </p>
             </div>
           </div>
 
@@ -211,7 +219,7 @@
             <input type="text"
                    [(ngModel)]="selectedSchool.hotline"
                    name="hotline"
-                   required pattern="^(0|\+84)[0-9]{9,10}$" minlength="10" maxlength="10"
+                   required pattern="^0[0-9]{9}$" minlength="10" maxlength="10"
                    #hotlineModel="ngModel"
                    (input)="clearError('hotline')"
                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
@@ -221,6 +229,9 @@
                    [class.focus:ring-blue-500]="!((hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched)) || fieldErrors['hotline'])" />
 
             <app-error-message [control]="hotlineModel" label="Hotline" [backendError]="fieldErrors['hotline']"></app-error-message>
+            <p *ngIf="!fieldErrors['hotline'] && !(hotlineModel.invalid && (hotlineModel.dirty || hotlineModel.touched))" class="mt-1 text-xs text-gray-500">
+              Hotline chỉ được chứa số, bắt đầu bằng 0 và có 10 chữ số (ví dụ: 0123456789).
+            </p>
           </div>
 
           <div>
@@ -228,7 +239,8 @@
             <input type="text"
                    [(ngModel)]="selectedSchool.address"
                    name="address"
-                   required minlength="5" maxlength="200"
+                   required minlength="5" maxlength="255"
+                   pattern="^[a-zA-Z0-9\s/,.-]+$"
                    #addressModel="ngModel"
                    (input)="clearError('address')"
                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
@@ -238,6 +250,9 @@
                    [class.focus:ring-blue-500]="!((addressModel.invalid && (addressModel.dirty || addressModel.touched)) || fieldErrors['address'])" />
 
             <app-error-message [control]="addressModel" label="Địa chỉ" [backendError]="fieldErrors['address']"></app-error-message>
+            <p *ngIf="!fieldErrors['address'] && !(addressModel.invalid && (addressModel.dirty || addressModel.touched))" class="mt-1 text-xs text-gray-500">
+              Địa chỉ chỉ được chứa chữ cái, số, khoảng trắng và các ký tự: / , . -
+            </p>
           </div>
 
           <div>
@@ -245,7 +260,8 @@
             <input type="text"
                    [(ngModel)]="selectedSchool.principalName"
                    name="principalName"
-                   required minlength="2" maxlength="50"
+                   required minlength="2" maxlength="100"
+                   pattern="^[a-zA-Z\s]+$"
                    #principalModel="ngModel"
                    (input)="clearError('principalName')"
                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition-all"
@@ -255,6 +271,9 @@
                    [class.focus:ring-blue-500]="!((principalModel.invalid && (principalModel.dirty || principalModel.touched)) || fieldErrors['principalName'])" />
 
             <app-error-message [control]="principalModel" label="Tên hiệu trưởng" [backendError]="fieldErrors['principalName']"></app-error-message>
+            <p *ngIf="!fieldErrors['principalName'] && !(principalModel.invalid && (principalModel.dirty || principalModel.touched))" class="mt-1 text-xs text-gray-500">
+              Tên hiệu trưởng chỉ được chứa chữ cái (chữ hoa và chữ thường) và khoảng trắng. Không được chứa số, ký tự đặc biệt hoặc dấu tiếng Việt. Ví dụ: "Nguyen Van A" - hợp lệ, "Nguyễn Văn A" - không hợp lệ.
+            </p>
           </div>
 
           <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100 mt-6">
